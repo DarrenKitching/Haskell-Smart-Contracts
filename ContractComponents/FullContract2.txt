@@ -1,2 +1,2 @@
 ;
-    amount = 
+    uint256 contractAmount = 

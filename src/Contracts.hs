@@ -29,7 +29,7 @@ produceInvoiceContract (Invoice amount receiver) destination = do
   contents2 <- readFile "ContractComponents/FullContract2.txt"
   contents3 <- readFile "ContractComponents/FullContract3.txt"
   appendFile destination (contents1)
-  appendFile destination ("\"" ++ receiver ++ "\"")
+  appendFile destination (receiver)
   appendFile destination (contents2)
   appendFile destination (show $ amount)
   appendFile destination (contents3)

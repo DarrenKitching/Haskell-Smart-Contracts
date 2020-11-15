@@ -2,8 +2,8 @@
 pragma solidity ^0.7.0;
 
 contract ReceiverPays {
-    address owner = "0xd925d24f99b01e0e0202ad2bcb9e2f5a7e7d409b6a23aedf6c8d5d784d2a0694";
-    amount = 1200;
+    address owner = 0xd925d24f99b01e0e0202ad2bcb9e2f5a7e7d409b6a23aedf6c8d5d784d2a0694;
+    uint256 contractAmount = 1200;
     mapping(uint256 => bool) usedNonces;
 
     constructor() payable {}
