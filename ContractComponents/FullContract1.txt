@@ -2,4 +2,4 @@
 pragma solidity ^0.7.0;
 
 contract ReceiverPays {
-    address owner = 
+    address constant public owner = 

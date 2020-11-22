@@ -33,25 +33,3 @@ produceInvoiceContract (Invoice amount receiver) destination = do
   appendFile destination (contents2)
   appendFile destination (show $ amount)
   appendFile destination (contents3)
-
-{-
-zero :: Contract
-
-one :: Currency -> Contract
-
-give :: Contract -> Contract
-
-and :: Contract -> Contract -> Contract
-
-or :: Contract -> Contract -> Contract
-
-truncate :: Date -> Contract -> Contract
-
-then :: Contract -> Contract -> Contract
-
-scale :: Obs Double -> Contract -> Contract
-
-get :: Contract -> Contract
-
-anytime :: Contract -> Contract
--}
