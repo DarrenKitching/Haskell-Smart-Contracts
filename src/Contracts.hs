@@ -12,7 +12,8 @@ class Contract c where
   value :: c -> Integer
   state :: c -> EnumState
   getReceiver :: c -> String
-  prodceContract :: c -> String -> IO ()
+  produceContract :: c -> String -> IO ()
+
 
 solidityVersion = "pragma solidity >=0.4.22 <0.8.0;"
 
@@ -20,7 +21,7 @@ instance Contract (Invoice amount receiver) where
   value (Invoice amount _) = amount
   state _ = Created
   getReceiver (Invoice _ receiver) = receiver
-  prodceContract c = produceInvoiceContract (c)
+  produceContract c = produceInvoiceContract (c)
 
 produceInvoiceContract :: (Invoice amount receiver) -> String -> IO ()
 produceInvoiceContract (Invoice amount receiver) destination = do

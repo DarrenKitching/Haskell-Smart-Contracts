@@ -2,6 +2,14 @@
 pragma solidity >=0.4.22 <0.8.0;
 
 contract VarExample {
+	struct Voter {
+		int voterID;
+		string voterName;
+	}
+	struct PollingStation {
+		int pollingStationID;
+		string voterAddress;
+	}
 	string value;
 	function getvalue() public view returns(string memory) {
 		return value;
@@ -22,5 +30,19 @@ contract VarExample {
 	}
 	function setmyUnsignedInteger(uint _myUnsignedInteger) public {
 		myUnsignedInteger = _myUnsignedInteger;
+	}
+	bool myBool;
+	function getmyBool() public view returns(bool) {
+		return myBool;
+	}
+	function setmyBool(bool _myBool) public {
+		myBool = _myBool;
+	}
+	bytes myBytes;
+	function getmyBytes() public view returns(bytes memory) {
+		return myBytes;
+	}
+	function setmyBytes(bytes memory _myBytes) public {
+		myBytes = _myBytes;
 	}
 }
