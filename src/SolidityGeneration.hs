@@ -1,8 +1,15 @@
 module SolidityGeneration where
 import Contracts
 
-data SolidityVariable = SolidityString String | SolidityInt String | SolidityUInt String | SolidityBool String | SolidityBytes String
-data SolidityFunction = Empty
+data SolidityLiteral = SolidityLiteral String
+data SolidityVariable = SolidityString String | SolidityInt String | SolidityUInt String | SolidityBool String | SolidityBytes String | SolidityAddress String | SolidityMapping String String String | Void
+data SolidityAssignment = SolidityAssignmentVarLit SolidityVariable SolidityLiteral | SolidityAssignmentVarVar SolidityVariable SolidityVariable
+data SolidityExpression = Empty | SolidityExpression SolidityAssignment
+data SolidityFunction = SolidityFunction { name :: String
+                                         , arguments :: [SolidityVariable]
+                                         , returnType :: SolidityVariable
+                                         , expressions :: [SolidityExpression]
+                                         }
 data SolidityStruct = SolidityStruct String [SolidityVariable] -- Struct name and list of variables in the Struct
 
 duplicate :: String -> Int -> String
@@ -14,6 +21,9 @@ createVariable (SolidityInt i) tabCount = (duplicate "\t" tabCount) ++ "int " ++
 createVariable (SolidityUInt u) tabCount = (duplicate "\t" tabCount) ++ "uint " ++ u ++ ";\n"  -- e.g. uint value;
 createVariable (SolidityBool b) tabCount = (duplicate "\t" tabCount) ++ "bool " ++ b ++ ";\n"  -- e.g. bool value;
 createVariable (SolidityBytes b) tabCount = (duplicate "\t" tabCount) ++ "bytes " ++ b ++ ";\n"  -- e.g. bool value;
+createVariable (SolidityAddress a) tabCount = (duplicate "\t" tabCount) ++ "address public " ++ a ++ ";\n"  -- e.g. address public minter;
+createVariable (SolidityMapping t1 t2 m) tabCount = (duplicate "\t" tabCount) ++ "mapping (" ++ t1 ++ " => " ++ t2 ++ ") public " ++ m ++ ";\n"  -- e.g. mapping (address => uint) public balances;
+createVariable _ _ = ""
 
 createGetter :: SolidityVariable -> Int -> String
 createGetter (SolidityString s) tabCount = (duplicate "\t" tabCount) ++ "function get" ++ s ++ "() public view returns(string memory) {\n" ++ (duplicate "\t" (tabCount+1)) ++ "return " ++ s ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
@@ -21,6 +31,7 @@ createGetter (SolidityInt i) tabCount = (duplicate "\t" tabCount) ++ "function g
 createGetter (SolidityUInt u) tabCount = (duplicate "\t" tabCount) ++ "function get" ++ u ++ "() public view returns(uint) {\n" ++ (duplicate "\t" (tabCount+1)) ++ "return " ++ u ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
 createGetter (SolidityBool b) tabCount = (duplicate "\t" tabCount) ++ "function get" ++ b ++ "() public view returns(bool) {\n" ++ (duplicate "\t" (tabCount+1)) ++ "return " ++ b ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
 createGetter (SolidityBytes b) tabCount = (duplicate "\t" tabCount) ++ "function get" ++ b ++ "() public view returns(bytes memory) {\n" ++ (duplicate "\t" (tabCount+1)) ++ "return " ++ b ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
+createGetter _ _ = ""
 
 createSetter :: SolidityVariable -> Int -> String
 createSetter (SolidityString s) tabCount = (duplicate "\t" tabCount) ++ "function set" ++ s ++ "(string memory _" ++ s ++ ") public {\n" ++ (duplicate "\t" (tabCount+1)) ++ s ++ " = _" ++ s ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
@@ -28,6 +39,7 @@ createSetter (SolidityInt i) tabCount = (duplicate "\t" tabCount) ++ "function s
 createSetter (SolidityUInt u) tabCount = (duplicate "\t" tabCount) ++ "function set" ++ u ++ "(uint _" ++ u ++ ") public {\n" ++ (duplicate "\t" (tabCount+1)) ++ u ++ " = _" ++ u ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
 createSetter (SolidityBool b) tabCount = (duplicate "\t" tabCount) ++ "function set" ++ b ++ "(bool _" ++ b ++ ") public {\n" ++ (duplicate "\t" (tabCount+1)) ++ b ++ " = _" ++ b ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
 createSetter (SolidityBytes b) tabCount = (duplicate "\t" tabCount) ++ "function set" ++ b ++ "(bytes memory _" ++ b ++ ") public {\n" ++ (duplicate "\t" (tabCount+1)) ++ b ++ " = _" ++ b ++ ";\n" ++ (duplicate "\t" (tabCount)) ++ "}\n"
+createSetter _ _ = ""
 
 printGlobalVariables :: [SolidityVariable] -> Int -> String
 printGlobalVariables [] _ = ""
@@ -44,6 +56,45 @@ printAllStructs :: [SolidityStruct] -> Int -> String
 printAllStructs [] _ = ""
 printAllStructs (x:xs) tabCount = (printStruct x tabCount) ++ (printAllStructs xs tabCount)
 
+printReturn :: SolidityVariable -> String
+printReturn (SolidityString _) = "public view returns (string)"
+printReturn (SolidityInt _) = "public view returns (int)"
+printReturn (SolidityUInt _) = "public view returns (uint)"
+printReturn (SolidityBool _) = "public view returns (bool)"
+printReturn (SolidityBytes _) = "public view returns (bytes)"
+printReturn (SolidityAddress _) = "public view returns (address)"
+printReturn _ = "public"
+
+printArgument :: SolidityVariable -> String
+printArgument (SolidityString name) = "string " ++ name
+printArgument (SolidityInt name) = "int " ++ name
+printArgument (SolidityUInt name) = "uint " ++ name
+printArgument (SolidityBool name) = "bool " ++ name
+printArgument (SolidityBytes name) = "bytes " ++ name
+printArgument (SolidityAddress name) = "address " ++ name 
+printArgument _ = ""
+
+printAllArguments :: [SolidityVariable] -> String
+printAllArguments [] = ""
+printAllArguments [x] = (printArgument x)
+printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
+
+printExpression :: SolidityExpression -> Int -> String
+-- printExpression (SolidityExpression SolidityAssignmentVarLit SolidityVariable SolidityLiteral) tabCount =
+-- printExpression (SolidityExpression SolidityAssignmentVarVar SolidityVariable SolidityVariable) tabCount = 
+printExpression _ _ = ""
+
+printAllExpressions :: [SolidityExpression] -> Int -> String
+printAllExpressions [] _ = ""
+printAllExpressions (x:xs) tabCount = (printExpression x tabCount) ++ (printAllExpressions xs tabCount) 
+
+printFunc :: SolidityFunction -> Int -> String
+printFunc (SolidityFunction name arguments returnType expressions) tabCount = (duplicate "\t" tabCount) ++ "function " ++ name ++ "(" ++ (printAllArguments arguments) ++ ") "++ (printReturn returnType) ++ " {\n" ++ (printAllExpressions expressions (tabCount+1)) ++ (duplicate "\t" tabCount) ++ "}\n"
+
+printAllFuncs :: [SolidityFunction] -> Int -> String
+printAllFuncs [] _ = ""
+printAllFuncs (x:xs) tabCount = (printFunc x tabCount) ++ (printAllFuncs xs tabCount)
+
 outputContract :: [SolidityVariable] -> [SolidityStruct] -> [SolidityFunction] -> String -> String -> String -> IO ()
 outputContract vars structs funcs name destination version = do
   writeFile destination ""
@@ -51,4 +102,5 @@ outputContract vars structs funcs name destination version = do
   appendFile destination ("contract " ++ name ++ " {\n")
   appendFile destination (printAllStructs structs 1)
   appendFile destination (printGlobalVariables vars 1)
+  appendFile destination (printAllFuncs funcs 1)
   appendFile destination ("}\n")
