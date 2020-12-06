@@ -15,6 +15,24 @@ data SolidityStruct = SolidityStruct String [SolidityVariable] -- Struct name an
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
 
+extractType :: SolidityVariable -> String
+extractType (SolidityString _) = "string"
+extractType (SolidityInt _) = "int"
+extractType (SolidityUInt _) = "uint"
+extractType (SolidityBool _) = "bool"
+extractType (SolidityBytes _) = "bytes"
+extractType (SolidityAddress _) = "address" 
+extractType _ = ""
+
+extractName :: SolidityVariable -> String
+extractName (SolidityString name) = name
+extractName (SolidityInt name) = name
+extractName (SolidityUInt name) = name
+extractName (SolidityBool name) = name
+extractName (SolidityBytes name) = name
+extractName (SolidityAddress name) = name 
+extractName _ = ""
+
 createVariable :: SolidityVariable -> Int -> String
 createVariable (SolidityString s) tabCount = (duplicate "\t" tabCount) ++ "string " ++ s ++ ";\n"  -- e.g. string value;
 createVariable (SolidityInt i) tabCount = (duplicate "\t" tabCount) ++ "int " ++ i ++ ";\n"  -- e.g. int value;
@@ -57,22 +75,11 @@ printAllStructs [] _ = ""
 printAllStructs (x:xs) tabCount = (printStruct x tabCount) ++ (printAllStructs xs tabCount)
 
 printReturn :: SolidityVariable -> String
-printReturn (SolidityString _) = "public view returns (string)"
-printReturn (SolidityInt _) = "public view returns (int)"
-printReturn (SolidityUInt _) = "public view returns (uint)"
-printReturn (SolidityBool _) = "public view returns (bool)"
-printReturn (SolidityBytes _) = "public view returns (bytes)"
-printReturn (SolidityAddress _) = "public view returns (address)"
-printReturn _ = "public"
+printReturn Void = "public"
+printReturn sv = "public view returns (" ++ (extractType sv) ++ ")"
 
 printArgument :: SolidityVariable -> String
-printArgument (SolidityString name) = "string " ++ name
-printArgument (SolidityInt name) = "int " ++ name
-printArgument (SolidityUInt name) = "uint " ++ name
-printArgument (SolidityBool name) = "bool " ++ name
-printArgument (SolidityBytes name) = "bytes " ++ name
-printArgument (SolidityAddress name) = "address " ++ name 
-printArgument _ = ""
+printArgument sv = (extractType sv) ++ " " ++ (extractName sv)
 
 printAllArguments :: [SolidityVariable] -> String
 printAllArguments [] = ""
@@ -80,8 +87,8 @@ printAllArguments [x] = (printArgument x)
 printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 
 printExpression :: SolidityExpression -> Int -> String
--- printExpression (SolidityExpression SolidityAssignmentVarLit SolidityVariable SolidityLiteral) tabCount =
--- printExpression (SolidityExpression SolidityAssignmentVarVar SolidityVariable SolidityVariable) tabCount = 
+printExpression (SolidityExpression (SolidityAssignmentVarLit (sv) (SolidityLiteral value))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv) ++ " = " ++ (value) ++ ";\n"
+printExpression (SolidityExpression (SolidityAssignmentVarVar (sv1) (sv2))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv1) ++ " = " ++ (extractName sv2) ++ ";\n"
 printExpression _ _ = ""
 
 printAllExpressions :: [SolidityExpression] -> Int -> String

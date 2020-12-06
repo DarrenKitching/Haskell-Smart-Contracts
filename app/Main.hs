@@ -19,10 +19,11 @@ minterAddress = SolidityAddress "minter"
 balanceMap = SolidityMapping "address" "uint" "balances"
 constructor = SolidityFunction "Coin" [] (Void) [SolidityExpression (SolidityAssignmentVarLit minterAddress (SolidityLiteral "msg.sender"))]
 mint = SolidityFunction "mint" [SolidityAddress "receiver", SolidityUInt "amount"] (Void) []
+send = SolidityFunction "send" [SolidityAddress "receiver", SolidityUInt "amount"] (Void) []
 
 coinExample :: IO ()
 coinExample = do
-  outputContract [minterAddress, balanceMap] [] [constructor, mint] "Coin" "ContractOutputs/Coin.sol" solidityVersion
+  outputContract [minterAddress, balanceMap] [] [constructor, mint, send] "Coin" "ContractOutputs/Coin.sol" solidityVersion
 
 main :: IO ()
 main = do
