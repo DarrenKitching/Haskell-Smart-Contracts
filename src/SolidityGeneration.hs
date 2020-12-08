@@ -4,13 +4,21 @@ import Contracts
 data SolidityLiteral = SolidityLiteral String
 data SolidityVariable = SolidityString String | SolidityInt String | SolidityUInt String | SolidityBool String | SolidityBytes String | SolidityAddress String | SolidityMapping String String String | Void
 data SolidityAssignment = SolidityAssignmentVarLit SolidityVariable SolidityLiteral | SolidityAssignmentVarVar SolidityVariable SolidityVariable
-data SolidityExpression = Empty | SolidityExpression SolidityAssignment
+data SolidityExpression = EmptyExpr
+                        | SolidityVariable
+                        | SAssign SolidityAssignment
+                        | Plus SolidityExpression SolidityExpression
+                        | Minus SolidityExpression SolidityExpression
+                        | Mult SolidityExpression SolidityExpression
+                        | Div SolidityExpression SolidityExpression
 data SolidityFunction = SolidityFunction { name :: String
                                          , arguments :: [SolidityVariable]
                                          , returnType :: SolidityVariable
                                          , expressions :: [SolidityExpression]
                                          }
 data SolidityStruct = SolidityStruct String [SolidityVariable] -- Struct name and list of variables in the Struct
+data SolidityCondition = Empty
+data ConditionBlock = ConditionBlock SolidityCondition [SolidityExpression] 
 
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
@@ -87,8 +95,8 @@ printAllArguments [x] = (printArgument x)
 printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 
 printExpression :: SolidityExpression -> Int -> String
-printExpression (SolidityExpression (SolidityAssignmentVarLit (sv) (SolidityLiteral value))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv) ++ " = " ++ (value) ++ ";\n"
-printExpression (SolidityExpression (SolidityAssignmentVarVar (sv1) (sv2))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv1) ++ " = " ++ (extractName sv2) ++ ";\n"
+printExpression (SAssign (SolidityAssignmentVarLit (sv) (SolidityLiteral value))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv) ++ " = " ++ (value) ++ ";\n"
+printExpression (SAssign (SolidityAssignmentVarVar (sv1) (sv2))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv1) ++ " = " ++ (extractName sv2) ++ ";\n"
 printExpression _ _ = ""
 
 printAllExpressions :: [SolidityExpression] -> Int -> String
