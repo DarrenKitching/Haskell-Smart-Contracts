@@ -1,24 +1,35 @@
 module SolidityGeneration where
 import Contracts
 
-data SolidityLiteral = SolidityLiteral String
+
+-- add type table to find out type given the var name
+data Contract = Contract {
+                           contractName :: String
+                         , declarations :: [SolidityDeclaration]
+                         }
+
+data SolidityDeclaration = SolidityDeclaration String  -- SolidityType includes String, Uint, function types etc
 data SolidityVariable = SolidityString String | SolidityInt String | SolidityUInt String | SolidityBool String | SolidityBytes String | SolidityAddress String | SolidityMapping String String String | Void
-data SolidityAssignment = SolidityAssignmentVarLit SolidityVariable SolidityLiteral | SolidityAssignmentVarVar SolidityVariable SolidityVariable
-data SolidityExpression = EmptyExpr
-                        | SolidityVariable
-                        | SAssign SolidityAssignment
+
+-- expressions should produce a value
+data SolidityExpression = V SolidityVariable
+                        | SolidityLiteral String
+                        | FCall SolidityFunction -- call to a function
                         | Plus SolidityExpression SolidityExpression
                         | Minus SolidityExpression SolidityExpression
                         | Mult SolidityExpression SolidityExpression
                         | Div SolidityExpression SolidityExpression
-data SolidityFunction = SolidityFunction { name :: String
+
+-- statements are standalone units of execution
+data SolidityStatement = SolidityExpression -- contains if and if-else...
+                       | SAssign SolidityExpression SolidityExpression
+
+data SolidityFunction = SolidityFunction { functionName :: String
                                          , arguments :: [SolidityVariable]
                                          , returnType :: SolidityVariable
-                                         , expressions :: [SolidityExpression]
+                                         , statements :: [SolidityStatement]
                                          }
 data SolidityStruct = SolidityStruct String [SolidityVariable] -- Struct name and list of variables in the Struct
-data SolidityCondition = Empty
-data ConditionBlock = ConditionBlock SolidityCondition [SolidityExpression] 
 
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
@@ -94,17 +105,25 @@ printAllArguments [] = ""
 printAllArguments [x] = (printArgument x)
 printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 
-printExpression :: SolidityExpression -> Int -> String
-printExpression (SAssign (SolidityAssignmentVarLit (sv) (SolidityLiteral value))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv) ++ " = " ++ (value) ++ ";\n"
-printExpression (SAssign (SolidityAssignmentVarVar (sv1) (sv2))) tabCount = (duplicate "\t" tabCount) ++ (extractName sv1) ++ " = " ++ (extractName sv2) ++ ";\n"
-printExpression _ _ = ""
+printExpression :: SolidityExpression -> String
+printExpression (V var) = extractName var
+printExpression (SolidityLiteral value) = value 
+-- add plus, minus, mul, div...
+printExpression _ = ""
 
-printAllExpressions :: [SolidityExpression] -> Int -> String
-printAllExpressions [] _ = ""
-printAllExpressions (x:xs) tabCount = (printExpression x tabCount) ++ (printAllExpressions xs tabCount) 
+printAllExpressions :: [SolidityExpression] -> String
+printAllExpressions [] = ""
+printAllExpressions (x:xs) = (printExpression x) ++ (printAllExpressions xs) 
+
+printStatement :: SolidityStatement -> Int -> String
+printStatement (SAssign expr1 expr2) tabCount =  (duplicate "\t" tabCount) ++ (printExpression expr1) ++ " " ++ (printExpression expr2) ++ ";"
+
+printAllStatements :: [SolidityStatement] -> Int -> String
+printAllStatements [] _ = ""
+printAllStatements (x:xs) tabCount = (printStatement x tabCount) ++ (printAllStatements xs tabCount) 
 
 printFunc :: SolidityFunction -> Int -> String
-printFunc (SolidityFunction name arguments returnType expressions) tabCount = (duplicate "\t" tabCount) ++ "function " ++ name ++ "(" ++ (printAllArguments arguments) ++ ") "++ (printReturn returnType) ++ " {\n" ++ (printAllExpressions expressions (tabCount+1)) ++ (duplicate "\t" tabCount) ++ "}\n"
+printFunc (SolidityFunction name arguments returnType statements) tabCount = (duplicate "\t" tabCount) ++ "function " ++ name ++ "(" ++ (printAllArguments arguments) ++ ") "++ (printReturn returnType) ++ " {\n" ++ (printAllStatements statements tabCount) ++ (duplicate "\t" tabCount) ++ "}\n"
 
 printAllFuncs :: [SolidityFunction] -> Int -> String
 printAllFuncs [] _ = ""

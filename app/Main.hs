@@ -17,7 +17,7 @@ pollingStationStruct = SolidityStruct "PollingStation" [SolidityInt "pollingStat
 -- Subcurrency Example from Solidity docs
 minterAddress = SolidityAddress "minter"
 balanceMap = SolidityMapping "address" "uint" "balances"
-constructor = SolidityFunction "Coin" [] (Void) [SAssign (SolidityAssignmentVarLit minterAddress (SolidityLiteral "msg.sender"))]
+constructor = SolidityFunction "Coin" [] (Void) [(SAssign (V minterAddress) (SolidityLiteral "msg.sender"))]
 mint = SolidityFunction "mint" [SolidityAddress "receiver", SolidityUInt "amount"] (Void) []
 send = SolidityFunction "send" [SolidityAddress "receiver", SolidityUInt "amount"] (Void) []
 
@@ -33,4 +33,3 @@ main :: IO ()
 main = do
   coinExample
   varExample
-  
