@@ -19,17 +19,31 @@ data SolidityExpression = V SolidityVariable
                         | Minus SolidityExpression SolidityExpression
                         | Mult SolidityExpression SolidityExpression
                         | Div SolidityExpression SolidityExpression
+                        | BoolExpr BoolExpression
 
 -- statements are standalone units of execution
 data SolidityStatement = SolidityExpression -- contains if and if-else...
                        | SAssign SolidityExpression SolidityExpression
+                       | SIf BoolExpression [SolidityStatement]
+                       | SIfElse [BoolExpression] [[SolidityStatement]]
 
 data SolidityFunction = SolidityFunction { functionName :: String
                                          , arguments :: [SolidityVariable]
                                          , returnType :: SolidityVariable
                                          , statements :: [SolidityStatement]
                                          }
+
 data SolidityStruct = SolidityStruct String [SolidityVariable] -- Struct name and list of variables in the Struct
+
+data BoolExpression = B SolidityExpression
+                    | AND BoolExpression BoolExpression
+                    | OR BoolExpression BoolExpression
+                    | Equality BoolExpression BoolExpression
+                    | Inequality BoolExpression BoolExpression
+                    | GreaterThan BoolExpression BoolExpression
+                    | LessThan BoolExpression BoolExpression
+                    | GreaterThanEqualTo BoolExpression BoolExpression
+                    | LessThanEqualTo BoolExpression BoolExpression
 
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
@@ -40,7 +54,7 @@ extractType (SolidityInt _) = "int"
 extractType (SolidityUInt _) = "uint"
 extractType (SolidityBool _) = "bool"
 extractType (SolidityBytes _) = "bytes"
-extractType (SolidityAddress _) = "address" 
+extractType (SolidityAddress _) = "address"
 extractType _ = ""
 
 extractName :: SolidityVariable -> String
@@ -49,7 +63,7 @@ extractName (SolidityInt name) = name
 extractName (SolidityUInt name) = name
 extractName (SolidityBool name) = name
 extractName (SolidityBytes name) = name
-extractName (SolidityAddress name) = name 
+extractName (SolidityAddress name) = name
 extractName _ = ""
 
 createVariable :: SolidityVariable -> Int -> String
@@ -107,20 +121,20 @@ printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 
 printExpression :: SolidityExpression -> String
 printExpression (V var) = extractName var
-printExpression (SolidityLiteral value) = value 
+printExpression (SolidityLiteral value) = value
 -- add plus, minus, mul, div...
 printExpression _ = ""
 
 printAllExpressions :: [SolidityExpression] -> String
 printAllExpressions [] = ""
-printAllExpressions (x:xs) = (printExpression x) ++ (printAllExpressions xs) 
+printAllExpressions (x:xs) = (printExpression x) ++ (printAllExpressions xs)
 
 printStatement :: SolidityStatement -> Int -> String
 printStatement (SAssign expr1 expr2) tabCount =  (duplicate "\t" tabCount) ++ (printExpression expr1) ++ " " ++ (printExpression expr2) ++ ";"
 
 printAllStatements :: [SolidityStatement] -> Int -> String
 printAllStatements [] _ = ""
-printAllStatements (x:xs) tabCount = (printStatement x tabCount) ++ (printAllStatements xs tabCount) 
+printAllStatements (x:xs) tabCount = (printStatement x tabCount) ++ (printAllStatements xs tabCount)
 
 printFunc :: SolidityFunction -> Int -> String
 printFunc (SolidityFunction name arguments returnType statements) tabCount = (duplicate "\t" tabCount) ++ "function " ++ name ++ "(" ++ (printAllArguments arguments) ++ ") "++ (printReturn returnType) ++ " {\n" ++ (printAllStatements statements tabCount) ++ (duplicate "\t" tabCount) ++ "}\n"
