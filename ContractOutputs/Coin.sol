@@ -5,9 +5,6 @@ contract Coin {
 	address public minter;
 	mapping (address => uint) public balances;
 	function Coin() public {
-	minter msg.sender;	}
-	function mint(address receiver, uint amount) public {
-	}
-	function send(address receiver, uint amount) public {
+		minter = msg.sender;
 	}
 }

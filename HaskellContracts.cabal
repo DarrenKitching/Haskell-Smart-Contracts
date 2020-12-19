@@ -28,7 +28,8 @@ source-repository head
 library
   exposed-modules:
       Contracts
-      SolidityGeneration
+      SolidityAbstractSyntax
+      SolidityPrinting
       Lib
   other-modules:
       Paths_HaskellContracts
