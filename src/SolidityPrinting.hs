@@ -63,8 +63,11 @@ printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 printExpression :: SolidityExpression -> String
 printExpression (V (SolidityVariable var)) = var
 printExpression (SolidityLiteral value) = value
--- add plus, minus, mul, div...
-printExpression _ = ""
+printExpression (Plus solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " + " ++ printExpression solidityExpr2
+printExpression (Minus solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " - " ++ printExpression solidityExpr2
+printExpression (Mult solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " * " ++ printExpression solidityExpr2
+printExpression (Div solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " / " ++ printExpression solidityExpr2
+printExpression (BoolExpr boolExpr) = printBoolExpr boolExpr
 
 printAllExpressions :: [SolidityExpression] -> String
 printAllExpressions [] = ""
@@ -72,10 +75,40 @@ printAllExpressions (x:xs) = (printExpression x) ++ (printAllExpressions xs)
 
 printStatement :: SolidityStatement -> Int -> String
 printStatement (SAssign expr1 expr2) tabCount =  (duplicate "\t" tabCount) ++ (printExpression expr1) ++ " = " ++ (printExpression expr2) ++ ";\n"
+printStatement (SIf (If condition statements)) tabCount = printIf (SIf (If condition statements)) tabCount
+printStatement (SIf (IfElse condition statements elsestatement)) tabCount = printIfElse (SIf (IfElse condition statements elsestatement)) tabCount
+printStatement (SIf (Else statements)) tabCount = printElse (SIf (Else statements)) tabCount
+printStatement (SReturn) tabCount = (duplicate "\t" tabCount) ++ "return;\n"
 
 printAllStatements :: [SolidityStatement] -> Int -> String
 printAllStatements [] _ = ""
 printAllStatements (x:xs) tabCount = (printStatement x tabCount) ++ (printAllStatements xs tabCount)
+
+printIf :: SolidityStatement -> Int -> String
+printIf (SIf (If condition statements)) tabCount = (duplicate "\t" tabCount) ++ "if (" ++ printBoolExpr condition ++ ") {\n" ++ printAllStatements statements (tabCount + 1) ++  (duplicate "\t" tabCount) ++ "}\n"
+
+printIfElse :: SolidityStatement -> Int -> String
+printIfElse (SIf (IfElse condition ifStatements (Else elseStatements))) tabCount = (printIf (SIf (If condition ifStatements)) tabCount) ++ printElse (SIf (Else elseStatements)) tabCount
+printIfElse (SIf (IfElse condition ifStatements (elseIf))) tabCount = (printIf (SIf (If condition ifStatements)) tabCount) ++ printElseIf (SIf elseIf) tabCount
+
+printElseIf :: SolidityStatement -> Int -> String
+printElseIf (SIf (If condition statements)) tabCount = (duplicate "\t" tabCount) ++ "else if (" ++ printBoolExpr condition ++ ") {\n" ++ printAllStatements statements (tabCount + 1) ++  (duplicate "\t" tabCount) ++ "}\n"
+printElseIf (SIf (IfElse condition statements (Else elseStatements))) tabCount = (duplicate "\t" tabCount) ++ "else if (" ++ printBoolExpr condition ++ ") {\n" ++ printAllStatements statements (tabCount + 1) ++  (duplicate "\t" tabCount) ++ "}\n" ++ printElse (SIf (Else elseStatements)) tabCount
+printElseIf (SIf (IfElse condition statements (elseIf))) tabCount = (duplicate "\t" tabCount) ++ "else if (" ++ printBoolExpr condition ++ ") {\n" ++ printAllStatements statements (tabCount + 1) ++  (duplicate "\t" tabCount) ++ "}\n" ++ printElseIf (SIf elseIf) tabCount
+
+printElse :: SolidityStatement -> Int -> String
+printElse (SIf (Else statements)) tabCount = (duplicate "\t" tabCount) ++ "else {\n" ++ printAllStatements statements (tabCount + 1) ++  (duplicate "\t" tabCount) ++ "}\n"
+
+printBoolExpr :: BoolExpression -> String
+printBoolExpr (B solidityExpression) = printExpression solidityExpression
+printBoolExpr (AND boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " && " ++ printBoolExpr boolExpr2
+printBoolExpr (OR boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " || " ++ printBoolExpr boolExpr2
+printBoolExpr (Equality boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " == " ++ printBoolExpr boolExpr2
+printBoolExpr (Inequality boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " != " ++ printBoolExpr boolExpr2
+printBoolExpr (GreaterThan boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " > " ++ printBoolExpr boolExpr2
+printBoolExpr (LessThan boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " < " ++ printBoolExpr boolExpr2
+printBoolExpr (GreaterThanEqualTo boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " >= " ++ printBoolExpr boolExpr2
+printBoolExpr (LessThanEqualTo boolExpr1 boolExpr2) = printBoolExpr boolExpr1 ++ " <= " ++ printBoolExpr boolExpr2
 
 printFunc :: String -> SolidityFunction -> Int -> String
 printFunc name (SolidityFunction returnType arguments statements) tabCount = (duplicate "\t" tabCount) ++ "function " ++ name ++ "(" ++ (printAllArguments arguments) ++ ") "++ (printReturn returnType) ++ " {\n" ++ (printAllStatements statements (tabCount + 1)) ++ (duplicate "\t" tabCount) ++ "}\n"

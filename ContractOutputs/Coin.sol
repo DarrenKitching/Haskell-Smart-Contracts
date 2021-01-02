@@ -7,4 +7,10 @@ contract Coin {
 	function Coin() public {
 		minter = msg.sender;
 	}
+	function mint(address receiver, uint amount) public {
+		if (msg.sender != minter) {
+			return;
+		}
+		balances = balances + amount;
+	}
 }

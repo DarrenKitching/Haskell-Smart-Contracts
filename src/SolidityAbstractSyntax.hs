@@ -45,8 +45,7 @@ data BoolExpression = B SolidityExpression
 
 -- statements are standalone units of execution
 data SolidityStatement = SAssign SolidityExpression SolidityExpression
-                       | SIf BoolExpression [SolidityStatement]
-                       | SIfElse [BoolExpression] [[SolidityStatement]]
+                       | SIf IfElse
                        | SForLoop {
                                     initialization :: SolidityStatement
                                   , forCondition :: BoolExpression
@@ -58,7 +57,7 @@ data SolidityStatement = SAssign SolidityExpression SolidityExpression
                                     whileCondition :: BoolExpression
                                   , whileExecutionStatements :: [SolidityStatement]
                                   }
-                        -- return statement
+                       | SReturn
 
 data SolidityFunction = SolidityFunction {
                                           returnType :: SolidityType
@@ -67,3 +66,7 @@ data SolidityFunction = SolidityFunction {
                                          }
 
 data SolidityStruct = SolidityStruct [SolidityDeclaration]
+
+data IfElse = If BoolExpression [SolidityStatement]
+            | IfElse BoolExpression  [SolidityStatement] IfElse
+            | Else [SolidityStatement]
