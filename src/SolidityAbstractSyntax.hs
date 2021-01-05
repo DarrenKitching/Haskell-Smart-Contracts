@@ -1,5 +1,4 @@
 module SolidityAbstractSyntax where
-import Contracts
 
 -- add type table to find out type given the var name
 data Contract = Contract {
@@ -25,6 +24,7 @@ data SolidityType = SolidityString
 
 -- expressions should produce a value
 data SolidityExpression = V SolidityVariable
+                        | VI SolidityVariable SolidityExpression -- index into a variable
                         | SolidityLiteral String
                         | FCall String -- call to a function, how to represent function names?
                         | Plus SolidityExpression SolidityExpression
@@ -47,7 +47,7 @@ data BoolExpression = B SolidityExpression
 data SolidityStatement = SAssign SolidityExpression SolidityExpression
                        | SIf IfElse
                        | SForLoop {
-                                    initialization :: SolidityStatement
+                                    initialization :: SolidityDeclaration
                                   , forCondition :: BoolExpression
                                   , update :: SolidityStatement
                                   , forExecutionStatements :: [SolidityStatement]

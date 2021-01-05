@@ -1,36 +1,38 @@
 module Contracts where
-
+import SolidityPrinting
+import SolidityAbstractSyntax
 import System.IO
-
-data Invoice amount receiver = Invoice { amount :: Integer
-                                       , receiver :: String
-                                       }
-data EnumState = Created | Locked | Inactive
-data FunctionState = External | Public | Internal | Private
-
-class Contract c where
-  value :: c -> Integer
-  state :: c -> EnumState
-  getReceiver :: c -> String
-  produceContract :: c -> String -> IO ()
-
 
 solidityVersion = "pragma solidity >=0.4.22 <0.8.0;"
 
-instance Contract (Invoice amount receiver) where
-  value (Invoice amount _) = amount
-  state _ = Created
-  getReceiver (Invoice _ receiver) = receiver
-  produceContract c = produceInvoiceContract (c)
+-- minter contract --
+minter = SolidityVariable "minter"
+balances = SolidityVariable "balances"
+receiverV = SolidityVariable "receiver"
+amountV = SolidityVariable "amount"
 
-produceInvoiceContract :: (Invoice amount receiver) -> String -> IO ()
-produceInvoiceContract (Invoice amount receiver) destination = do
-  writeFile destination ""
-  contents1 <- readFile "ContractComponents/FullContract1.txt"
-  contents2 <- readFile "ContractComponents/FullContract2.txt"
-  contents3 <- readFile "ContractComponents/FullContract3.txt"
-  appendFile destination (contents1)
-  appendFile destination (receiver)
-  appendFile destination (contents2)
-  appendFile destination (show $ amount)
-  appendFile destination (contents3)
+-- declarations --
+address = SolidityDeclaration SolidityAddress "minter"
+balMap = SolidityDeclaration (SolidityMapping SolidityAddress SolidityUInt) "balances"
+receiverDeclaration = SolidityDeclaration SolidityAddress "receiver"
+amountDeclaration = SolidityDeclaration SolidityUInt "amount"
+constructor = SolidityDeclaration constructorFunction "Coin"
+mint = SolidityDeclaration mintFunction "mint"
+send = SolidityDeclaration sendFunction "send"
+
+-- bool expressions --
+inequalityCheck = SIf (If (Inequality (B $ SolidityLiteral "msg.sender") (B $ V minter)) [SReturn])
+lessThanCheck = SIf (If (LessThan (B $ V balances) (B $ V amountV)) [SReturn])
+
+-- functions --
+mintFunction = FunctionType (SolidityFunction Void [receiverDeclaration, amountDeclaration] [inequalityCheck, SAssign (VI (balances) (V receiverV)) (Plus (V balances) (V amountV))])
+constructorFunction = FunctionType (SolidityFunction Void [] [SAssign (SolidityLiteral "minter") (SolidityLiteral "msg.sender")])
+sendFunction = FunctionType (SolidityFunction Void [receiverDeclaration, amountDeclaration] [lessThanCheck, SAssign (VI balances (SolidityLiteral "msg.sender")) (Minus (V balances) (V amountV)), SAssign (VI balances (V receiverV)) (Plus (V balances) (V amountV))])
+
+-- contract --
+coin = Contract "Coin" [address, balMap, constructor, mint, send] -- contract takes list of declarations
+
+
+coinExample :: IO ()
+coinExample = do
+  outputContract coin "ContractOutputs/Coin.sol" solidityVersion

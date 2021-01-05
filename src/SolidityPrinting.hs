@@ -62,6 +62,7 @@ printAllArguments (x:xs) = (printArgument x) ++ ", " ++ (printAllArguments xs)
 
 printExpression :: SolidityExpression -> String
 printExpression (V (SolidityVariable var)) = var
+printExpression (VI (SolidityVariable var) (index)) = var ++ "[" ++ printExpression index ++ "]"
 printExpression (SolidityLiteral value) = value
 printExpression (Plus solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " + " ++ printExpression solidityExpr2
 printExpression (Minus solidityExpr1 solidityExpr2) = printExpression solidityExpr1 ++ " - " ++ printExpression solidityExpr2
@@ -78,6 +79,8 @@ printStatement (SAssign expr1 expr2) tabCount =  (duplicate "\t" tabCount) ++ (p
 printStatement (SIf (If condition statements)) tabCount = printIf (SIf (If condition statements)) tabCount
 printStatement (SIf (IfElse condition statements elsestatement)) tabCount = printIfElse (SIf (IfElse condition statements elsestatement)) tabCount
 printStatement (SIf (Else statements)) tabCount = printElse (SIf (Else statements)) tabCount
+printStatement (SForLoop initialization forCondition update forExecutionStatements) tabCount = (duplicate "\t" tabCount) ++ "for (" ++ printDeclaration initialization 0 ++ " " ++ printBoolExpr forCondition ++ " " ++ printStatement update 0 ++ ") {\n" ++ printAllStatements forExecutionStatements (tabCount + 1) ++ (duplicate "\t" (tabCount)) ++ "}\n"
+printStatement (SWhileLoop whileCondition whileExecutionStatements) tabCount = (duplicate "\t" tabCount) ++ "while (" ++ (printBoolExpr whileCondition) ++ ") {\n" ++ printAllStatements whileExecutionStatements (tabCount + 1) ++ (duplicate "\t" (tabCount)) ++ "}\n"
 printStatement (SReturn) tabCount = (duplicate "\t" tabCount) ++ "return;\n"
 
 printAllStatements :: [SolidityStatement] -> Int -> String

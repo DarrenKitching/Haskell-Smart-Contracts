@@ -11,6 +11,13 @@ contract Coin {
 		if (msg.sender != minter) {
 			return;
 		}
-		balances = balances + amount;
+		balances[receiver] = balances + amount;
+	}
+	function send(address receiver, uint amount) public {
+		if (balances < amount) {
+			return;
+		}
+		balances[msg.sender] = balances - amount;
+		balances[receiver] = balances + amount;
 	}
 }
