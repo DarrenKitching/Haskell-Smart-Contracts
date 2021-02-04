@@ -30,6 +30,9 @@ library
       Contracts
       SolidityAbstractSyntax
       SolidityPrinting
+      LanguageGrammar
+      YulLanguageGrammar
+      LanguageGrammarPrinting
       Lib
   other-modules:
       Paths_HaskellContracts

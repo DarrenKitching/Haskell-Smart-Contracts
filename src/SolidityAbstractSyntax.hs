@@ -20,8 +20,6 @@ data SolidityType = SolidityString
                   | FunctionType SolidityFunction
                   | StructType SolidityStruct
 
--- data SolidityVariable = SolidityString String | SolidityInt String | SolidityUInt String | SolidityBool String | SolidityBytes String | SolidityAddress String | SolidityMapping String String String | Void
-
 -- expressions should produce a value
 data SolidityExpression = V SolidityVariable
                         | VI SolidityVariable SolidityExpression -- index into a variable
