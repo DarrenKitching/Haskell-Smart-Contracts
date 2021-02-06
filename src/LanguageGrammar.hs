@@ -21,7 +21,7 @@ data ImportDirective = ImportPath Path (Maybe Identifier) -- import path or impo
 data Path = DoubleQuotedPath StringLitDouble | SingleQuotedPath StringLitSingle -- must be non empty
 
 data Identifier = From
-                | Char Char [Char] -- Char can be a letter, a number, a dollar sign or an underscore
+                | Identifier Char [Char] -- Char can be a letter, a number, a dollar sign or an underscore
 
 data SymbolAliases = IdentifierAlias Identifier
                    | As Identifier Identifier

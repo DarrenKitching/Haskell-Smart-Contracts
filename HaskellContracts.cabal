@@ -27,11 +27,9 @@ source-repository head
 
 library
   exposed-modules:
-      Contracts
-      SolidityAbstractSyntax
-      SolidityPrinting
       LanguageGrammar
       YulLanguageGrammar
+      YulLanguageGrammarPrinting
       LanguageGrammarPrinting
       Lib
   other-modules:
