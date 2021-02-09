@@ -13,10 +13,10 @@ printSolidity (ImportDir directive nextHighLevel) = (printImportDirective direct
 printSolidity (ContractDef definition nextHighLevel) = (printContractDefinition definition) ++ (printSolidity nextHighLevel)
 printSolidity (InterfaceDef definition nextHighLevel) = (printInterfaceDefinition definition) ++ (printSolidity nextHighLevel)
 printSolidity (LibraryDef definition nextHighLevel) = (printLibraryDefinition definition) ++ (printSolidity nextHighLevel)
-printSolidity (FunctionDef definition nextHighLevel) = (printFunctionDefinition definition) ++ (printSolidity nextHighLevel)
+printSolidity (FunctionDef definition nextHighLevel) = (printFunctionDefinition definition 0) ++ (printSolidity nextHighLevel)
 printSolidity (ConstVariableDec declaration nextHighLevel) = (printConstVariableDeclaration declaration) ++ (printSolidity nextHighLevel)
-printSolidity (StructDef struct nextHighLevel) = (printStructDefinition struct) ++ (printSolidity nextHighLevel)
-printSolidity (EnumDef definition nextHighLevel) = (printEnumDefinition definition) ++ (printSolidity nextHighLevel)
+printSolidity (StructDef struct nextHighLevel) = (printStructDefinition struct 0) ++ (printSolidity nextHighLevel)
+printSolidity (EnumDef definition nextHighLevel) = (printEnumDefinition definition 0) ++ (printSolidity nextHighLevel)
 
 printPragmaToken :: PragmaToken -> String
 printPragmaToken (PragmaToken x) = [x]
@@ -37,21 +37,21 @@ printContractDefinition (ContractDefinition (Just x) identifier (Just y) contrac
 printContractDefinition (ContractDefinition (Nothing) identifier (Just y) contractBodyElems) = "contract " ++ (printIdentifier identifier) ++ " is " ++ (printInheritanceSpecifierList y) ++ " {\n" ++ (printContractBodyElementList contractBodyElems 1) ++ "}\n"
 printContractDefinition (ContractDefinition (Just x) identifier (Nothing) contractBodyElems) = "abstract contract " ++ (printIdentifier identifier) ++ " {\n" ++ (printContractBodyElementList contractBodyElems 1) ++ "}\n"
 
-printContractBodyElement :: ContractBodyElement -> String
-printContractBodyElement (ConstructElem constructorDefinition) = (printConstructorDefinition constructorDefinition)
-printContractBodyElement (FunctionElem functionDefinition) = (printFunctionDefinition functionDefinition)
-printContractBodyElement (ModifierElem modifierDefinition) = (printModifierDefinition modifierDefinition)
-printContractBodyElement (FallbackFunctionElem fallbackFunctionDefinition) = (printFallbackFunctionDefintion fallbackFunctionDefinition)
-printContractBodyElement (ReceiveFunctionElem receiveFunctionDefinition) = (printReceiveFunctionDefinition receiveFunctionDefinition)
-printContractBodyElement (StructElem structDefinition) = (printStructDefinition structDefinition)
-printContractBodyElement (EnumElem enumDefinition) = (printEnumDefinition enumDefinition)
-printContractBodyElement (StateVariableElem stateVariableDeclaration) = (printStateVariableDeclaration stateVariableDeclaration)
-printContractBodyElement (EventElem eventDefinition) = (printEventDefinition eventDefinition)
-printContractBodyElement (UsingDirectiveElem usingDirective) = (printUsingDirective usingDirective)
+printContractBodyElement :: ContractBodyElement -> Int -> String
+printContractBodyElement (ConstructElem constructorDefinition) tabCount = (printConstructorDefinition constructorDefinition tabCount)
+printContractBodyElement (FunctionElem functionDefinition) tabCount = (printFunctionDefinition functionDefinition tabCount)
+printContractBodyElement (ModifierElem modifierDefinition) tabCount = (printModifierDefinition modifierDefinition tabCount)
+printContractBodyElement (FallbackFunctionElem fallbackFunctionDefinition) tabCount = (printFallbackFunctionDefintion fallbackFunctionDefinition tabCount)
+printContractBodyElement (ReceiveFunctionElem receiveFunctionDefinition) tabCount = (printReceiveFunctionDefinition receiveFunctionDefinition tabCount)
+printContractBodyElement (StructElem structDefinition) tabCount = (printStructDefinition structDefinition tabCount)
+printContractBodyElement (EnumElem enumDefinition) tabCount = (printEnumDefinition enumDefinition tabCount)
+printContractBodyElement (StateVariableElem stateVariableDeclaration) tabCount = (duplicate "\t" tabCount) ++ (printStateVariableDeclaration stateVariableDeclaration)
+printContractBodyElement (EventElem eventDefinition) tabCount = (duplicate "\t" tabCount) ++ (printEventDefinition eventDefinition)
+printContractBodyElement (UsingDirectiveElem usingDirective) tabCount = (duplicate "\t" tabCount) ++ (printUsingDirective usingDirective)
 
 printContractBodyElementList :: [ContractBodyElement] -> Int -> String
 printContractBodyElementList [] _ = ""
-printContractBodyElementList (x:xs) tabCount = (duplicate "\t" tabCount) ++ (printContractBodyElement x) ++ "\n" ++ (printContractBodyElementList xs tabCount)
+printContractBodyElementList (x:xs) tabCount = (printContractBodyElement x tabCount) ++ "\n" ++ (printContractBodyElementList xs tabCount)
 
 printInheritanceSpecifierList :: [InheritanceSpecifier] -> String
 printInheritanceSpecifierList [] = ""
@@ -69,15 +69,15 @@ printPath :: Path -> String
 printPath (DoubleQuotedPath litDouble) = "\"" ++ (LanguageGrammarPrinting.printStringLitDouble litDouble) ++ "\""
 printPath (SingleQuotedPath litSingle) = "\'" ++ (LanguageGrammarPrinting.printStringLitSingle litSingle) ++ "\'"
 
-printFunctionDefinition :: FunctionDefinition -> String
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Nothing)) = "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Just y)) = "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y)
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Nothing)) = "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Just y)) = "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y)
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Nothing)) = "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Just y)) = "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y)
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Nothing)) = "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Just y)) = "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y)
+printFunctionDefinition :: FunctionDefinition -> Int -> String
+printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ ";"
+printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ ";"
+printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
+printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
+printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
 
 printFunctionModifier :: FunctionModifiers -> String
 printFunctionModifier (VisibilityModifier visibility) = (printVisibility visibility) ++ " "
@@ -133,18 +133,14 @@ printVisibility PrivateVisibility = "private"
 printVisibility PublicVisibility = "public"
 
 printParameterList :: ParameterList -> String
-printParameterList (ParameterList typeName (Nothing) (Nothing) []) = (printTypeName typeName)
-printParameterList (ParameterList typeName (Just x) (Just y) []) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ " " ++ (printIdentifier y)
-printParameterList (ParameterList typeName (Just x) (Nothing) []) = (printTypeName typeName) ++ " " ++ (printDataLocation x)
-printParameterList (ParameterList typeName (Nothing) (Just y) []) = (printTypeName typeName) ++ " " ++ (printIdentifier y)
-printParameterList (ParameterList typeName (Nothing) (Nothing) (xs)) = (printTypeName typeName) ++ ", " ++ (printListParameterList xs)
-printParameterList (ParameterList typeName (Just x) (Just y) (xs)) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ " " ++ (printIdentifier y) ++ ", " ++ (printListParameterList xs)
-printParameterList (ParameterList typeName (Just x) (Nothing) (xs)) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ ", " ++ (printListParameterList xs)
-printParameterList (ParameterList typeName (Nothing) (Just y) (xs)) = (printTypeName typeName) ++ " " ++ (printIdentifier y) ++ ", " ++ (printListParameterList xs)
-
-printListParameterList :: [ParameterList] -> String
-printListParameterList [x] = printParameterList x
-printListParameterList (x:xs) = (printParameterList x) ++ (printListParameterList xs)
+printParameterList (ParameterList typeName (Nothing) (Nothing) (Nothing)) = (printTypeName typeName)
+printParameterList (ParameterList typeName (Just x) (Just y) (Nothing)) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ " " ++ (printIdentifier y)
+printParameterList (ParameterList typeName (Just x) (Nothing) (Nothing)) = (printTypeName typeName) ++ " " ++ (printDataLocation x)
+printParameterList (ParameterList typeName (Nothing) (Just y) (Nothing)) = (printTypeName typeName) ++ " " ++ (printIdentifier y)
+printParameterList (ParameterList typeName (Nothing) (Nothing) (Just xs)) = (printTypeName typeName) ++ ", " ++ (printParameterList xs)
+printParameterList (ParameterList typeName (Just x) (Just y) (Just xs)) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ " " ++ (printIdentifier y) ++ ", " ++ (printParameterList xs)
+printParameterList (ParameterList typeName (Just x) (Nothing) (Just xs)) = (printTypeName typeName) ++ " " ++ (printDataLocation x) ++ ", " ++ (printParameterList xs)
+printParameterList (ParameterList typeName (Nothing) (Just y) (Just xs)) = (printTypeName typeName) ++ " " ++ (printIdentifier y) ++ ", " ++ (printParameterList xs)
 
 printDataLocation :: DataLocation -> String
 printDataLocation Memory = "memory"
@@ -276,7 +272,7 @@ printFixedBytes Bytes31 = "bytes31"
 printFixedBytes Bytes32 = "bytes32"
 
 printMappingType :: MappingType -> String
-printMappingType (MappingType mappingKeyType typeName) = "mapping ()" ++ (printMappingKeyType mappingKeyType) ++ " => " ++ (printTypeName typeName) ++ ")"
+printMappingType (MappingType mappingKeyType typeName) = "mapping (" ++ (printMappingKeyType mappingKeyType) ++ " => " ++ (printTypeName typeName) ++ ")"
 
 printMappingKeyType :: MappingKeyType -> String
 printMappingKeyType (ElementaryMapping elementaryTypeName) = (printElementaryTypeName elementaryTypeName)
@@ -318,21 +314,24 @@ printEscapeSequenceList :: [EscapeSequence] -> String
 printEscapeSequenceList [] = ""
 printEscapeSequenceList (x:xs) = (LanguageGrammarPrinting.printEscapeSequence x) ++ (printEscapeSequenceList xs)
 
-printBlock :: Block -> String
-printBlock (Block (Nothing) (Nothing) (Nothing)) = "{}"
-printBlock (Block (Nothing) (Nothing) (Just unCheckedBlock)) = "{" ++ (printUncheckedBlock unCheckedBlock) ++ "}"
-printBlock (Block (Nothing) (Just statement) (Nothing)) = "{" ++ (printStatement statement) ++ "}"
-printBlock (Block (Nothing) (Just statement) (Just unCheckedBlock)) =  "{" ++ (printStatement statement) ++ (printUncheckedBlock unCheckedBlock) ++ "}"
-printBlock (Block (Just unCheckedBlock) (Nothing) (Nothing)) = "{" ++ (printUncheckedBlock unCheckedBlock) ++ "}"
-printBlock (Block (Just unCheckedBlock1) (Nothing) (Just unCheckedBlock2)) = "{" ++ (printUncheckedBlock unCheckedBlock1) ++ (printUncheckedBlock unCheckedBlock1) ++ "}"
-printBlock (Block (Just unCheckedBlock) (Just statement) (Nothing)) = "{" ++ (printUncheckedBlock unCheckedBlock) ++ (printStatement statement)  ++ "}"
-printBlock (Block (Just unCheckedBlock1) (Just statement) (Just unCheckedBlock2)) =  "{" ++ (printUncheckedBlock unCheckedBlock1) ++ (printStatement statement)  ++ (printUncheckedBlock unCheckedBlock2) ++ "}"
+printBlockItem :: BlockItem -> Int -> String
+printBlockItem EmptyBlockItem  _ = ""
+printBlockItem (BlockStatementItem statement) _ = (printStatement statement)
+printBlockItem (UnCheckedBlockItem unCheckedBlock) tabCount = (printUncheckedBlock unCheckedBlock tabCount)
 
-printUncheckedBlock :: UnCheckedBlock -> String
-printUncheckedBlock (UnCheckedBlock block) = "unchecked " ++ (printBlock block)
+printAllBlockItems :: [BlockItem] -> Int -> String
+printAllBlockItems [] _ = ""
+printAllBlockItems (x:xs) tabCount = (duplicate "\t" tabCount) ++ (printBlockItem x tabCount) ++ "\n"
 
-printStructDefinition :: StructDefinition -> String
-printStructDefinition (StructDefinition identifier structMember structMemberList) = "struct " ++ (printIdentifier identifier) ++ " {" ++ (printStructMember structMember) ++ (printStructMemberList structMemberList) ++ "}"
+printBlock :: Block -> Int -> String
+printBlock (Block []) tabCount = "{}"
+printBlock (Block xs) tabCount = "{\n" ++ (printAllBlockItems xs tabCount) ++ (duplicate "\t" (tabCount - 1)) ++"}"
+
+printUncheckedBlock :: UnCheckedBlock -> Int -> String
+printUncheckedBlock (UnCheckedBlock block) tabCount = "unchecked " ++ (printBlock block tabCount)
+
+printStructDefinition :: StructDefinition -> Int -> String
+printStructDefinition (StructDefinition identifier structMember structMemberList) tabCount = (duplicate "\t" tabCount) ++ "struct " ++ (printIdentifier identifier) ++ " {" ++ (printStructMember structMember) ++ (printStructMemberList structMemberList) ++ "}"
 
 printStructMember :: StructMember -> String
 printStructMember (StructMember typeName identifier) = (printTypeName typeName) ++ " " ++ (printIdentifier identifier) ++ ";"
@@ -344,9 +343,9 @@ printStructMemberList (x:xs) = (printStructMember x) ++ (printStructMemberList x
 printConstVariableDeclaration :: ConstantVariableDeclaration -> String
 printConstVariableDeclaration (ConstantVariableDeclaration typeName identifier expression) = (printTypeName typeName) ++ " constant " ++ (printIdentifier identifier) ++ " = " ++ (printExpression expression) ++ ";"
 
-printEnumDefinition :: EnumDefinition -> String
-printEnumDefinition (EnumDefinition identifier firstIdentifier []) = "enum " ++ (printIdentifier identifier) ++ " { " ++ (printIdentifier firstIdentifier) ++ "}"
-printEnumDefinition (EnumDefinition identifier firstIdentifier remainingIdentifiers) = "enum " ++ (printIdentifier identifier) ++ " { " ++ (printIdentifier firstIdentifier) ++ ", " ++ (printCommaSpacedIdentifiers remainingIdentifiers) ++ "}"
+printEnumDefinition :: EnumDefinition -> Int -> String
+printEnumDefinition (EnumDefinition identifier firstIdentifier []) tabCount = (duplicate "\t" tabCount) ++ "enum " ++ (printIdentifier identifier) ++ " { " ++ (printIdentifier firstIdentifier) ++ "}"
+printEnumDefinition (EnumDefinition identifier firstIdentifier remainingIdentifiers) tabCount = (duplicate "\t" tabCount) ++ "enum " ++ (printIdentifier identifier) ++ " { " ++ (printIdentifier firstIdentifier) ++ ", " ++ (printCommaSpacedIdentifiers remainingIdentifiers) ++ "}"
 
 printCommaSpacedIdentifiers :: [Identifier] -> String
 printCommaSpacedIdentifiers [x] = printIdentifier x
@@ -362,7 +361,7 @@ printExpression (DotIdentifier expression identifier) = (printExpression express
 printExpression (DotAddress expression) = (printExpression expression) ++ ".address"
 printExpression (IdentifierExpression expression identifierExpressionPairs) = (printExpression expression) ++ "{" ++ (printIdentifierExpressionPairs identifierExpressionPairs) ++ "}"
 printExpression (ExpressionArgs expression callArgumentList) = (printExpression expression) ++ (printCallArgumentList callArgumentList)
-printExpression (Payable callArgumentList) = "payable" ++ (printCallArgumentList callArgumentList)
+printExpression (PayableExpression callArgumentList) = "payable" ++ (printCallArgumentList callArgumentList)
 printExpression (Type typeName) = "type" ++ "(" ++ (printTypeName typeName) ++ ")"
 printExpression (PreIncrement expression) = "++" ++ (printExpression expression)
 printExpression (PreDecrement expression) = "--" ++ (printExpression expression)
@@ -420,7 +419,7 @@ printIdentifierExpressionPairs [x] = printIdentifierExpressionPair x
 printIdentifierExpressionPairs (x:xs) = (printIdentifierExpressionPair x) ++ ", " ++ (printIdentifierExpressionPairs xs)
 
 printStatement :: Statement -> String
-printStatement (BlockStatement block) = (printBlock block)
+printStatement (BlockStatement block) = (printBlock block 1)
 printStatement (VarDec variableDeclarationStatement) = (printVariableDeclarationStatement variableDeclarationStatement)
 printStatement (ExprStatement expressionStatement) = (printExpressionStatement expressionStatement)
 printStatement (If ifStatement) = (printIfStatement ifStatement)
@@ -447,23 +446,23 @@ printAssemblyStatement (AssemblyStatement (Just evmasm) yulStatementList) = "ass
 printAssemblyStatement (AssemblyStatement (Nothing) yulStatementList) = "assembly { " ++ (printYulStatementList yulStatementList) ++ "}"
 
 printTryStatement :: TryStatement -> String
-printTryStatement (TryStatement expression (Just parameterList) block catchClause catchClauseList) = "try " ++ (printExpression expression) ++ " returns (" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block) ++ (printCatchClause catchClause) ++ (printCatchClauseList catchClauseList)
-printTryStatement (TryStatement expression (Nothing) block catchClause catchClauseList) = "try " ++ (printExpression expression) ++ (printBlock block) ++ (printCatchClause catchClause) ++ (printCatchClauseList catchClauseList)
+printTryStatement (TryStatement expression (Just parameterList) block catchClause catchClauseList) = "try " ++ (printExpression expression) ++ " returns (" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block 1) ++ (printCatchClause catchClause) ++ (printCatchClauseList catchClauseList)
+printTryStatement (TryStatement expression (Nothing) block catchClause catchClauseList) = "try " ++ (printExpression expression) ++ (printBlock block 1) ++ (printCatchClause catchClause) ++ (printCatchClauseList catchClauseList)
 
 printCatchClause :: CatchClause -> String
-printCatchClause (CatchClause block) = "catch " ++ (printBlock block)
-printCatchClause (CatchClauseParameters (Just identifier) parameterList block) = "catch " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ")" ++ (printBlock block)
-printCatchClause (CatchClauseParameters (Nothing) parameterList block) = "catch " ++  "(" ++ (printParameterList parameterList) ++ ")" ++ (printBlock block)
+printCatchClause (CatchClause block) = "catch " ++ (printBlock block 1)
+printCatchClause (CatchClauseParameters (Just identifier) parameterList block) = "catch " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ")" ++ (printBlock block 1)
+printCatchClause (CatchClauseParameters (Nothing) parameterList block) = "catch " ++  "(" ++ (printParameterList parameterList) ++ ")" ++ (printBlock block 1)
 
 printCatchClauseList :: [CatchClause] -> String
 printCatchClauseList [] = ""
 printCatchClauseList (x:xs) = (printCatchClause x) ++ (printCatchClauseList xs)
 
-printConstructorDefinition :: ConstructorDefinition -> String
-printConstructorDefinition (Constructor (Just parameterList) (Just modifiers) block) = "constructor (" ++ (printParameterList parameterList) ++ ") " ++ (printModifiersList modifiers) ++ (printBlock block)
-printConstructorDefinition (Constructor (Just parameterList) (Nothing) block) = "constructor (" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block)
-printConstructorDefinition (Constructor (Nothing) (Just modifiers) block) = "constructor () " ++ (printModifiersList modifiers) ++ (printBlock block)
-printConstructorDefinition (Constructor (Nothing) (Nothing) block) = "constructor () " ++ (printBlock block)
+printConstructorDefinition :: ConstructorDefinition -> Int -> String
+printConstructorDefinition (Constructor (Just parameterList) (Just modifiers) block) tabCount = (duplicate "\t" tabCount) ++ "constructor (" ++ (printParameterList parameterList) ++ ") " ++ (printModifiersList modifiers) ++ (printBlock block (tabCount + 1))
+printConstructorDefinition (Constructor (Just parameterList) (Nothing) block) tabCount = (duplicate "\t" tabCount) ++ "constructor (" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block (tabCount + 1))
+printConstructorDefinition (Constructor (Nothing) (Just modifiers) block) tabCount = (duplicate "\t" tabCount) ++ "constructor () " ++ (printModifiersList modifiers) ++ (printBlock block (tabCount + 1))
+printConstructorDefinition (Constructor (Nothing) (Nothing) block) tabCount = (duplicate "\t" tabCount) ++ "constructor () " ++ (printBlock block (tabCount + 1))
 
 printModifiers :: Modifiers -> String
 printModifiers (Invocation modifierInvocation) = (printModifierInvocation modifierInvocation)
@@ -503,21 +502,21 @@ printForInitialiser (None) = "; "
 printExpressionStatement :: ExpressionStatement -> String
 printExpressionStatement (ExpressionStatement expression) = (printExpression expression) ++ "; "
 
-printModifierDefinition :: ModifierDefinition -> String
-printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Just overrideSpecifier) (Just block)) = "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printOverrideSpecifier overrideSpecifier) ++ "virtual" ++ (printBlock block)
-printModifierDefinition (ModifierDefinition identifier (Nothing) (Just overrideSpecifier) (Just block)) = "modifier " ++ (printIdentifier identifier) ++ (printBlock block)
-printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Nothing) (Just block)) = "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block)
-printModifierDefinition (ModifierDefinition identifier (Nothing) (Nothing) (Just block)) = "modifier " ++ (printIdentifier identifier) ++ (printBlock block)
-printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Just overrideSpecifier) (Nothing)) = "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printOverrideSpecifier overrideSpecifier) ++ "virtual" ++ (";")
-printModifierDefinition (ModifierDefinition identifier (Nothing) (Just overrideSpecifier) (Nothing)) = "modifier " ++ (printIdentifier identifier) ++ (";")
-printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Nothing) (Nothing)) = "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (";")
-printModifierDefinition (ModifierDefinition identifier (Nothing) (Nothing) (Nothing)) = "modifier " ++ (printIdentifier identifier) ++ (";")
+printModifierDefinition :: ModifierDefinition -> Int -> String
+printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Just overrideSpecifier) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printOverrideSpecifier overrideSpecifier) ++ "virtual" ++ (printBlock block (tabCount + 1))
+printModifierDefinition (ModifierDefinition identifier (Nothing) (Just overrideSpecifier) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ (printBlock block (tabCount + 1))
+printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Nothing) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printBlock block (tabCount + 1))
+printModifierDefinition (ModifierDefinition identifier (Nothing) (Nothing) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ (printBlock block (tabCount + 1))
+printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Just overrideSpecifier) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (printOverrideSpecifier overrideSpecifier) ++ "virtual" ++ (";")
+printModifierDefinition (ModifierDefinition identifier (Nothing) (Just overrideSpecifier) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ (";")
+printModifierDefinition (ModifierDefinition identifier (Just parameterList) (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ "(" ++ (printParameterList parameterList) ++ ") " ++ (";")
+printModifierDefinition (ModifierDefinition identifier (Nothing) (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "modifier " ++ (printIdentifier identifier) ++ (";")
 
-printFallbackFunctionDefintion :: FallbackFunctionDefinition -> String
-printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Just returnParameterList) (Just block)) = "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "returns (" ++ (printParameterList returnParameterList) ++ ") " ++ (printBlock block)
-printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Nothing) (Just block)) = "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ (printBlock block)
-printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Just returnParameterList) (Nothing)) = "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "returns (" ++ (printParameterList returnParameterList) ++ ") " ++ "; "
-printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Nothing) (Nothing)) = "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "; "
+printFallbackFunctionDefintion :: FallbackFunctionDefinition -> Int -> String
+printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Just returnParameterList) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "returns (" ++ (printParameterList returnParameterList) ++ ") " ++ (printBlock block (tabCount + 1))
+printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Nothing) (Just block)) tabCount = (duplicate "\t" tabCount) ++ "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ (printBlock block (tabCount + 1))
+printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Just returnParameterList) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "returns (" ++ (printParameterList returnParameterList) ++ ") " ++ "; "
+printFallbackFunctionDefintion (FallbackFunctionDefinition parameterList fallBackModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "fallback (" ++ (printParameterList parameterList) ++ ") " ++ (printFallBackModifiers fallBackModifiers) ++ "; "
 
 printFallBackModifier :: FallBackModifier -> String
 printFallBackModifier (ExternalFallBack) = "external"
@@ -557,9 +556,9 @@ printVariableDeclaration :: VariableDeclaration -> String
 printVariableDeclaration (VariableDeclaration typeName (Just dataLocation) identifier) = (printTypeName typeName) ++ (printDataLocation dataLocation) ++ (printIdentifier identifier)
 printVariableDeclaration (VariableDeclaration typeName (Nothing) identifier) = (printTypeName typeName) ++ (printIdentifier identifier)
 
-printReceiveFunctionDefinition :: ReceiveFunctionDefinition -> String
-printReceiveFunctionDefinition (ReceiveFunctionDefinition receiveModifiers (Just block)) = "receive ( )" ++ (printReceiveModifiersList receiveModifiers) ++ (printBlock block)
-printReceiveFunctionDefinition (ReceiveFunctionDefinition receiveModifiers (Nothing)) = "receive ( )" ++ (printReceiveModifiersList receiveModifiers) ++ "; "
+printReceiveFunctionDefinition :: ReceiveFunctionDefinition -> Int -> String
+printReceiveFunctionDefinition (ReceiveFunctionDefinition receiveModifiers (Just block)) tabCount = "receive ( )" ++ (printReceiveModifiersList receiveModifiers) ++ (printBlock block (tabCount + 1))
+printReceiveFunctionDefinition (ReceiveFunctionDefinition receiveModifiers (Nothing)) tabCount = "receive ( )" ++ (printReceiveModifiersList receiveModifiers) ++ "; "
 
 printReceiveModifier :: ReceiveModifiers -> String
 printReceiveModifier (ExternalReceive) = "external"
@@ -587,7 +586,7 @@ printStateVariableModifier (ImmutableState) = "immutable"
 
 printStateVariableModifiersList :: [StateVariableModifiers] -> String
 printStateVariableModifiersList [] = ""
-printStateVariableModifiersList [x] = (printStateVariableModifier x)
+printStateVariableModifiersList [x] = (printStateVariableModifier x) ++ " "
 printStateVariableModifiersList (x:xs) = (printStateVariableModifier x) ++ " " ++ (printStateVariableModifiersList xs)
 
 printEventDefinition :: EventDefinition -> String

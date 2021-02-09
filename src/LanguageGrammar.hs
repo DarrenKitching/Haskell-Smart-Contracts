@@ -53,7 +53,8 @@ data Modifiers = Invocation ModifierInvocation
                | Internal
                | Public
 
-data Block = Block (Maybe UnCheckedBlock) (Maybe Statement) (Maybe UnCheckedBlock)
+data BlockItem = EmptyBlockItem | BlockStatementItem Statement | UnCheckedBlockItem UnCheckedBlock
+data Block = Block [BlockItem]
 data UnCheckedBlock = UnCheckedBlock Block
 data TypeName = ElementaryType ElementaryTypeName
               | FunctionType FunctionTypeName
@@ -61,7 +62,7 @@ data TypeName = ElementaryType ElementaryTypeName
               | IdentifierPathType IdentifierPath
               | TypeNameExpression TypeName (Maybe Expression)
 
-data Payable
+data Payable = Payable
 
 data ElementaryTypeName = AddressType (Maybe Payable)
                         | Bool
@@ -83,7 +84,7 @@ data CallArgumentList = CallArgumentExpr Expression [Expression] -- one or more 
 
 data ModifierInvocation = ModifierInvocation IdentifierPath (Maybe CallArgumentList)
 
-data ParameterList = ParameterList TypeName (Maybe DataLocation) (Maybe Identifier) [ParameterList]
+data ParameterList = ParameterList TypeName (Maybe DataLocation) (Maybe Identifier) (Maybe ParameterList)
 
 data ConstructorDefinition = Constructor (Maybe ParameterList) (Maybe [Modifiers]) Block -- parameter list and modifiers can be empty
 
@@ -99,7 +100,7 @@ data Expression = Index Expression Expression
                 | DotAddress Expression
                 | IdentifierExpression Expression [(Identifier, Expression)]
                 | ExpressionArgs Expression CallArgumentList
-                | Payable CallArgumentList
+                | PayableExpression CallArgumentList
                 | Type TypeName
                 | PreIncrement Expression
                 | PreDecrement Expression

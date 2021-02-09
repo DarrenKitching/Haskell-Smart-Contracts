@@ -31,6 +31,8 @@ library
       YulLanguageGrammar
       YulLanguageGrammarPrinting
       LanguageGrammarPrinting
+      Abstractions
+      ContractExamples
       Lib
   other-modules:
       Paths_HaskellContracts
