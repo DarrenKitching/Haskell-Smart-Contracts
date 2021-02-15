@@ -10,7 +10,7 @@ main :: IO ()
 main = do
   outputContract coinExample "ContractOutputs/Test.sol"
   outputContract shorternedCoinExample "ContractOutputs/AbstractionTest.sol"
-  outputContract ballotContract "ContractOutputs/Ballot.sol"
+  outputContract ballotExample "ContractOutputs/Ballot.sol"
 
 outputContract :: Solidity -> String -> IO ()
 outputContract contract destination = do

@@ -183,11 +183,11 @@ printYulStringLiteral (YulStringLiteralDouble stringLitDouble) = (printStringLit
 printYulStringLiteral (YulStringLiteralSingle stringLitSingle) = (printStringLitSingle stringLitSingle)
 
 printStringLitDouble :: StringLitDouble -> String
-printStringLitDouble (DoubleQuotePrintable doubleQuotePrintable) = [doubleQuotePrintable]
+printStringLitDouble (DoubleQuotePrintable doubleQuotePrintable) = doubleQuotePrintable
 printStringLitDouble (Double escapeSequence) = printEscapeSequence escapeSequence
 
 printStringLitSingle :: StringLitSingle -> String
-printStringLitSingle (SingleQuotedPrintable singleQuotedPrintable) = [singleQuotedPrintable]
+printStringLitSingle (SingleQuotedPrintable singleQuotedPrintable) = singleQuotedPrintable
 printStringLitSingle (Single escapeSequence) = printEscapeSequence escapeSequence
 
 printEscapeSequence :: EscapeSequence -> String

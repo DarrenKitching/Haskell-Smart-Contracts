@@ -5,6 +5,9 @@ import YulLanguageGrammar
 createIdentifier :: String -> Identifier -- use a string to create an identifier, string must have at least one char
 createIdentifier (x:xs) = Identifier x xs
 
+createIdentifierExpression :: String -> Expression
+createIdentifierExpression (xs) = IdentifierExpr $ (createIdentifier xs)
+
 createPragma :: String -> Solidity -> Solidity -- use a string and other top level components to create top level pragma
 createPragma (x:xs) solidity = Pragma (PragmaToken x) (createPragmaTokenList xs) solidity
 
@@ -15,38 +18,128 @@ createPragmaTokenList (x:xs) = (PragmaToken x) : (createPragmaTokenList xs)
 defineContract :: String -> [ContractBodyElement] -> Solidity -> Solidity
 defineContract name elements solidity = ContractDef (ContractDefinition (Nothing) (createIdentifier name) (Nothing) elements) solidity
 
-addressDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-addressDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ AddressType (Nothing)) modifiers (createIdentifier name) (Nothing)
+stateAddressDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateAddressDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ AddressType (Nothing)) modifiers (createIdentifier name) (Nothing)
 
-boolDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-boolDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Bool) modifiers (createIdentifier name) (Nothing)
+stateBoolDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateBoolDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Bool) modifiers (createIdentifier name) (Nothing)
 
-stringDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-stringDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ String) modifiers (createIdentifier name) (Nothing)
+stateStringDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateStringDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ String) modifiers (createIdentifier name) (Nothing)
 
-bytesDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-bytesDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Bytes) modifiers (createIdentifier name) (Nothing)
+stateBytesDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateBytesDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Bytes) modifiers (createIdentifier name) (Nothing)
 
-intDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-intDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ SignedIntType Int) modifiers (createIdentifier name) (Nothing)
+stateIntDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateIntDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ SignedIntType Int) modifiers (createIdentifier name) (Nothing)
 
-uintDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-uintDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ UnsignedIntType UInt) modifiers (createIdentifier name) (Nothing)
+stateUintDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateUintDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ UnsignedIntType UInt) modifiers (createIdentifier name) (Nothing)
 
-fixedBytesDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-fixedBytesDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ FixedBytesType Bytes8) modifiers (createIdentifier name) (Nothing)
+stateFixedBytesDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateFixedBytesDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ FixedBytesType Bytes8) modifiers (createIdentifier name) (Nothing)
 
-fixedDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-fixedDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Fixed) modifiers (createIdentifier name) (Nothing)
+stateFixedDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateFixedDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ Fixed) modifiers (createIdentifier name) (Nothing)
 
-ufixedDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
-ufixedDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ UFixed) modifiers (createIdentifier name) (Nothing)
+stateUfixedDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateUfixedDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ UFixed) modifiers (createIdentifier name) (Nothing)
 
-structArrayDeclaration :: String -> [StateVariableModifiers] -> String -> StateVariableDeclaration
-structArrayDeclaration structName modifiers varName = StateVariableDeclaration (TypeNameExpression (IdentifierPathType (IdentifierPath (createIdentifier structName) [])) (Nothing)) modifiers (createIdentifier varName) (Nothing)
+stateStructArrayDeclaration :: String -> [StateVariableModifiers] -> String -> StateVariableDeclaration
+stateStructArrayDeclaration structName modifiers varName = StateVariableDeclaration (TypeNameExpression (IdentifierPathType (IdentifierPath (createIdentifier structName) [])) (Nothing)) modifiers (createIdentifier varName) (Nothing)
 
-mappingDeclaration :: String -> MappingType -> [StateVariableModifiers] -> StateVariableDeclaration
-mappingDeclaration name mappingTypeName modifiers  = StateVariableDeclaration (Mapping mappingTypeName) modifiers (createIdentifier name) (Nothing)
+stateMappingDeclaration :: String -> MappingType -> [StateVariableModifiers] -> StateVariableDeclaration
+stateMappingDeclaration name mappingTypeName modifiers  = StateVariableDeclaration (Mapping mappingTypeName) modifiers (createIdentifier name) (Nothing)
+
+stateAddressAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateAddressAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ AddressType (Nothing)) modifiers (createIdentifier name) (Just e)
+
+stateBoolAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateBoolAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ Bool) modifiers (createIdentifier name) (Just e)
+
+stateStringAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateStringAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ String) modifiers (createIdentifier name) (Just e)
+
+stateBytesAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateBytesAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ Bytes) modifiers (createIdentifier name) (Just e)
+
+stateIntAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateIntAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ SignedIntType Int) modifiers (createIdentifier name) (Just e)
+
+stateUintAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateUintAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ UnsignedIntType UInt) modifiers (createIdentifier name) (Just e)
+
+stateFixedBytesAssignmentDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
+stateFixedBytesAssignmentDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ FixedBytesType Bytes8) modifiers (createIdentifier name) (Nothing)
+
+stateFixedAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateFixedAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ Fixed) modifiers (createIdentifier name) (Just e)
+
+stateUfixedAssignmentDeclaration :: String -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateUfixedAssignmentDeclaration name modifiers e = StateVariableDeclaration (ElementaryType $ UFixed) modifiers (createIdentifier name) (Just e)
+
+stateStructArrayAssignmentDeclaration :: String -> [StateVariableModifiers] -> String -> Expression -> StateVariableDeclaration
+stateStructArrayAssignmentDeclaration structName modifiers varName e = StateVariableDeclaration (TypeNameExpression (IdentifierPathType (IdentifierPath (createIdentifier structName) [])) (Nothing)) modifiers (createIdentifier varName) (Just e)
+
+stateMappingAssignmentDeclaration :: String -> MappingType -> [StateVariableModifiers] -> Expression -> StateVariableDeclaration
+stateMappingAssignmentDeclaration name mappingTypeName modifiers e  = StateVariableDeclaration (Mapping mappingTypeName) modifiers (createIdentifier name) (Just e)
+
+addressVariableDeclaration :: String -> VariableDeclarationStatement
+addressVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ AddressType (Nothing)) (Nothing) (createIdentifier name)) (Nothing)
+
+boolVariableDeclaration :: String -> VariableDeclarationStatement
+boolVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Bool) (Nothing) (createIdentifier name)) (Nothing)
+
+stringVariableDeclaration :: String -> VariableDeclarationStatement
+stringVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ String) (Nothing) (createIdentifier name)) (Nothing)
+
+bytesVariableDeclaration :: String -> VariableDeclarationStatement
+bytesVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Bytes) (Nothing) (createIdentifier name)) (Nothing)
+
+intVariableDeclaration :: String -> VariableDeclarationStatement
+intVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ SignedIntType Int) (Nothing) (createIdentifier name)) (Nothing)
+
+uintVariableDeclaration :: String -> VariableDeclarationStatement
+uintVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ UnsignedIntType UInt) (Nothing) (createIdentifier name)) (Nothing)
+
+fixedBytesVariableDeclaration :: String -> VariableDeclarationStatement
+fixedBytesVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ FixedBytesType Bytes8) (Nothing) (createIdentifier name)) (Nothing)
+
+fixedVariableDeclaration :: String -> VariableDeclarationStatement
+fixedVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Fixed) (Nothing) (createIdentifier name)) (Nothing)
+
+uFixedVariableDeclaration :: String -> VariableDeclarationStatement
+uFixedVariableDeclaration name = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ UFixed) (Nothing) (createIdentifier name)) (Nothing)
+
+addressVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+addressVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ AddressType (Nothing)) (Nothing) (createIdentifier name)) (Just e)
+
+boolVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+boolVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Bool) (Nothing) (createIdentifier name)) (Just e)
+
+stringVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+stringVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ String) (Nothing) (createIdentifier name)) (Just e)
+
+bytesVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+bytesVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Bytes) (Nothing) (createIdentifier name)) (Just e)
+
+intVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+intVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ SignedIntType Int) (Nothing) (createIdentifier name)) (Just e)
+
+uintVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+uintVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ UnsignedIntType UInt) (Nothing) (createIdentifier name)) (Just e)
+
+fixedBytesVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+fixedBytesVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ FixedBytesType Bytes8) (Nothing) (createIdentifier name)) (Just e)
+
+fixedVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+fixedVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Fixed) (Nothing) (createIdentifier name)) (Just e)
+
+uFixedVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
+uFixedVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ UFixed) (Nothing) (createIdentifier name)) (Just e)
+
+identifierPathAssignmentDeclaration :: String -> String -> Expression -> VariableDeclarationStatement
+identifierPathAssignmentDeclaration identifierPath name  e = SingleVariableDeclartion (VariableDeclaration (IdentifierPathType $ IdentifierPath (createIdentifier identifierPath) []) (Just Storage) (createIdentifier name)) (Just e)
 
 statementToBlockItem :: Statement -> BlockItem
 statementToBlockItem x = BlockStatementItem x
@@ -72,8 +165,11 @@ createReturnFunction :: String -> [FunctionModifiers] -> Maybe ParameterList -> 
 createReturnFunction name modifiers (Just parameters) block returnParams = FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters) modifiers (Just returnParams) (Just block)
 createReturnFunction name modifiers (Nothing) block returnParams = FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing) modifiers (Just returnParams) (Just block)
 
-createEqualsExpression :: Identifier -> Identifier -> ExpressionStatement
-createEqualsExpression identifier1 identifier2 = ExpressionStatement (Equals (IdentifierExpr $ identifier1) (IdentifierExpr $ identifier2))
+createEqualsExpression :: Identifier -> Identifier -> Expression
+createEqualsExpression identifier1 identifier2 = (Equals (IdentifierExpr $ identifier1) (IdentifierExpr $ identifier2))
+
+createEqualityExpression :: Identifier -> Identifier -> Expression
+createEqualityExpression identifier1 identifier2 = (Equality (IdentifierExpr $ identifier1) (IdentifierExpr $ identifier2))
 
 createStruct :: String -> [(ElementaryTypeName, String)] -> StructDefinition
 createStruct name ((elementaryTypeName, identifier):xs) = StructDefinition (createIdentifier name) (StructMember (ElementaryType $ elementaryTypeName) (createIdentifier identifier)) (createStructMembers xs)
@@ -87,6 +183,22 @@ createMappingFromType elementaryTypeName typeName = MappingType (ElementaryMappi
 
 createMappingFromIdentifier :: String -> TypeName -> MappingType
 createMappingFromIdentifier name typeName = MappingType (IdentifierMapping $ IdentifierPath (createIdentifier name) []) typeName
+
+createDecimalNumber :: [Char] -> Literal
+createDecimalNumber xs = NumberLit (Decimal (DecimalNumber xs) Nothing)
+
+createSingleQuotedStringLiteral :: [Char] -> Literal
+createSingleQuotedStringLiteral xs = StringLit (StringLiteralSingle (SingleQuotedPrintable xs))
+
+createDoubleQuotedStringLiteral :: [Char] -> Literal
+createDoubleQuotedStringLiteral xs = StringLit (StringLiteralDouble (DoubleQuotePrintable xs))
+
+createBoolLiteral :: Bool -> Literal
+createBoolLiteral Prelude.True = BoolLit (LanguageGrammar.True)
+createBoolLiteral Prelude.False = BoolLit (LanguageGrammar.False)
+
+expressionToStatement :: Expression -> Statement
+expressionToStatement e = ExprStatement $ ExpressionStatement e
 
 public = VisibilityModifier PublicVisibility
 view = StateMutabilityModifier View

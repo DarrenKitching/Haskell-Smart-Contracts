@@ -298,11 +298,11 @@ printStateMutabilityList [] = ""
 printStateMutabilityList (x:xs) = (printStateMutability x) ++ (printStateMutabilityList xs)
 
 printStringLitDouble :: StringLitDouble -> String
-printStringLitDouble (DoubleQuotePrintable doubleQuotePrintable) = [doubleQuotePrintable]
+printStringLitDouble (DoubleQuotePrintable doubleQuotePrintable) = "\"" ++ doubleQuotePrintable ++ "\""
 printStringLitDouble (Double escapeSequence) = LanguageGrammarPrinting.printEscapeSequence escapeSequence
 
 printStringLitSingle :: StringLitSingle -> String
-printStringLitSingle (SingleQuotedPrintable singleQuotedPrintable) = [singleQuotedPrintable]
+printStringLitSingle (SingleQuotedPrintable singleQuotedPrintable) = "\'" ++ singleQuotedPrintable ++ "\'"
 printStringLitSingle (Single escapeSequence) = LanguageGrammarPrinting.printEscapeSequence escapeSequence
 
 printEscapeSequence :: EscapeSequence -> String
@@ -316,12 +316,12 @@ printEscapeSequenceList (x:xs) = (LanguageGrammarPrinting.printEscapeSequence x)
 
 printBlockItem :: BlockItem -> Int -> String
 printBlockItem EmptyBlockItem  _ = ""
-printBlockItem (BlockStatementItem statement) _ = (printStatement statement)
+printBlockItem (BlockStatementItem statement) tabCount = (printStatement statement tabCount)
 printBlockItem (UnCheckedBlockItem unCheckedBlock) tabCount = (printUncheckedBlock unCheckedBlock tabCount)
 
 printAllBlockItems :: [BlockItem] -> Int -> String
 printAllBlockItems [] _ = ""
-printAllBlockItems (x:xs) tabCount = (duplicate "\t" tabCount) ++ (printBlockItem x tabCount) ++ "\n"
+printAllBlockItems (x:xs) tabCount = (duplicate "\t" tabCount) ++ (printBlockItem x tabCount) ++ "\n" ++ (printAllBlockItems xs tabCount)
 
 printBlock :: Block -> Int -> String
 printBlock (Block []) tabCount = "{}"
@@ -418,23 +418,24 @@ printIdentifierExpressionPairs :: [(Identifier, Expression)] -> String
 printIdentifierExpressionPairs [x] = printIdentifierExpressionPair x
 printIdentifierExpressionPairs (x:xs) = (printIdentifierExpressionPair x) ++ ", " ++ (printIdentifierExpressionPairs xs)
 
-printStatement :: Statement -> String
-printStatement (BlockStatement block) = (printBlock block 1)
-printStatement (VarDec variableDeclarationStatement) = (printVariableDeclarationStatement variableDeclarationStatement)
-printStatement (ExprStatement expressionStatement) = (printExpressionStatement expressionStatement)
-printStatement (If ifStatement) = (printIfStatement ifStatement)
-printStatement (For forStatement) = (printForStatement forStatement)
-printStatement (While whileStatement) = (printWhileStatement whileStatement)
-printStatement (DoWhile doWhileStatement) = (printDoWhileStatement doWhileStatement)
-printStatement (Continue continueStatement) = "continue;"
-printStatement (Break breakStatement) = "break;"
-printStatement (Try tryStatement) = (printTryStatement tryStatement)
-printStatement (Return returnStatement) = (printReturnStatement returnStatement)
-printStatement (Emit emitStatement) = (printEmitStatement emitStatement)
-printStatement (Assembly assemblyStatement) = (printAssemblyStatement assemblyStatement)
+printStatement :: Statement -> Int -> String
+printStatement (BlockStatement block) tabCount = (printBlock block tabCount)
+printStatement (VarDec variableDeclarationStatement) tabCount = (printVariableDeclarationStatement variableDeclarationStatement)
+printStatement (ExprStatement expressionStatement) tabCount = (printExpressionStatement expressionStatement)
+printStatement (If ifStatement) tabCount = (printIfStatement ifStatement tabCount)
+printStatement (For forStatement) tabCount = (printForStatement forStatement tabCount)
+printStatement (While whileStatement) tabCount = (printWhileStatement whileStatement tabCount)
+printStatement (DoWhile doWhileStatement) tabCount = (printDoWhileStatement doWhileStatement tabCount)
+printStatement (Continue continueStatement) tabCount = "continue;"
+printStatement (Break breakStatement) tabCount = "break;"
+printStatement (Try tryStatement) tabCount = (printTryStatement tryStatement)
+printStatement (Return returnStatement) tabCount = (printReturnStatement returnStatement)
+printStatement (Emit emitStatement) tabCount = (printEmitStatement emitStatement)
+printStatement (Assembly assemblyStatement) tabCount = (printAssemblyStatement assemblyStatement)
 
 printVariableDeclarationStatement :: VariableDeclarationStatement -> String
-printVariableDeclarationStatement (SingleVariableDeclartion variableDeclaration expression) = (printVariableDeclaration variableDeclaration) ++ " = " ++ (printExpression expression) ++ ";"
+printVariableDeclarationStatement (SingleVariableDeclartion variableDeclaration (Just expression)) = (printVariableDeclaration variableDeclaration) ++ " = " ++ (printExpression expression) ++ ";"
+printVariableDeclarationStatement (SingleVariableDeclartion variableDeclaration (Nothing)) = (printVariableDeclaration variableDeclaration) ++ ";"
 printVariableDeclarationStatement (TupleVariableDeclaration variableDeclarationTuple expression) = (printVariableDeclarationTuple variableDeclarationTuple) ++ " = " ++ (printExpression expression) ++ ";"
 
 printReturnStatement :: ReturnStatement -> String
@@ -475,24 +476,24 @@ printModifiersList [] = ""
 printModifiersList [x] = (printModifiers x)
 printModifiersList (x:xs) = (printModifiers x) ++ " " ++ (printModifiersList xs)
 
-printIfStatement :: IfStatement -> String
-printIfStatement (IfStatement expression statement (Just elseStatement)) = "if (" ++ (printExpression expression) ++ ") " ++ (printStatement statement) ++ "else " ++ (printStatement elseStatement)
-printIfStatement (IfStatement expression statement (Nothing)) = "if (" ++ (printExpression expression) ++ ") " ++ (printStatement statement)
+printIfStatement :: IfStatement -> Int -> String
+printIfStatement (IfStatement expression statement (Just elseStatement)) tabCount = "if (" ++ (printExpression expression) ++ ") " ++ (printStatement statement (tabCount + 1)) ++ "else " ++ (printStatement elseStatement (tabCount + 1))
+printIfStatement (IfStatement expression statement (Nothing)) tabCount = "if (" ++ (printExpression expression) ++ ") " ++ (printStatement statement (tabCount + 1))
 
-printWhileStatement :: WhileStatement -> String
-printWhileStatement (WhileStatement expression statement) = "while (" ++ (printExpression expression) ++ ") " ++ (printStatement statement)
+printWhileStatement :: WhileStatement -> Int -> String
+printWhileStatement (WhileStatement expression statement) tabCount = "while (" ++ (printExpression expression) ++ ") " ++ (printStatement statement (tabCount + 1))
 
-printDoWhileStatement :: DoWhileStatement -> String
-printDoWhileStatement (DoWhileStatement statement expression) = "do " ++ (printStatement statement) ++ " while (" ++ (printExpression expression) ++ ");"
+printDoWhileStatement :: DoWhileStatement -> Int -> String
+printDoWhileStatement (DoWhileStatement statement expression) tabCount = "do " ++ (printStatement statement (tabCount + 1)) ++ " while (" ++ (printExpression expression) ++ ");"
 
 printEmitStatement :: EmitStatement -> String
 printEmitStatement (EmitStatement expression callArgumentList) = "emit " ++ (printExpression expression) ++ (printCallArgumentList callArgumentList) ++ ";"
 
-printForStatement :: ForStatement -> String
-printForStatement (ForStatement forInitialiser (Just expressionStatement) (Just expression) statement) = "for (" ++ (printForInitialiser forInitialiser) ++ (printExpressionStatement expressionStatement) ++ (printExpression expression) ++ ") " ++ (printStatement statement)
-printForStatement (ForStatement forInitialiser (Nothing) (Just expression) statement) = "for (" ++ (printForInitialiser forInitialiser) ++ ("; ") ++ (printExpression expression) ++ ") " ++ (printStatement statement)
-printForStatement (ForStatement forInitialiser (Just expressionStatement) (Nothing) statement) = "for (" ++ (printForInitialiser forInitialiser) ++ (printExpressionStatement expressionStatement) ++ ") " ++ (printStatement statement)
-printForStatement (ForStatement forInitialiser (Nothing) (Nothing) statement) = "for (" ++ (printForInitialiser forInitialiser) ++ ("; ") ++ ") " ++ (printStatement statement)
+printForStatement :: ForStatement -> Int -> String
+printForStatement (ForStatement forInitialiser (Just expressionStatement) (Just expression) statement) tabCount = "for (" ++ (printForInitialiser forInitialiser) ++ (printExpressionStatement expressionStatement) ++ (printExpression expression) ++ ") " ++ (printStatement statement (tabCount + 1))
+printForStatement (ForStatement forInitialiser (Nothing) (Just expression) statement) tabCount = "for (" ++ (printForInitialiser forInitialiser) ++ ("; ") ++ (printExpression expression) ++ ") " ++ (printStatement statement (tabCount + 1))
+printForStatement (ForStatement forInitialiser (Just expressionStatement) (Nothing) statement) tabCount = "for (" ++ (printForInitialiser forInitialiser) ++ (printExpressionStatement expressionStatement) ++ ") " ++ (printStatement statement (tabCount + 1))
+printForStatement (ForStatement forInitialiser (Nothing) (Nothing) statement) tabCount = "for (" ++ (printForInitialiser forInitialiser) ++ ("; ") ++ ") " ++ (printStatement statement (tabCount + 1))
 
 printForInitialiser :: ForInitialiser -> String
 printForInitialiser (VarInitialse variableDeclarationStatement) = (printVariableDeclarationStatement variableDeclarationStatement)
@@ -553,8 +554,8 @@ printBooleanLiteral LanguageGrammar.True = "true"
 printBooleanLiteral LanguageGrammar.False = "false"
 
 printVariableDeclaration :: VariableDeclaration -> String
-printVariableDeclaration (VariableDeclaration typeName (Just dataLocation) identifier) = (printTypeName typeName) ++ (printDataLocation dataLocation) ++ (printIdentifier identifier)
-printVariableDeclaration (VariableDeclaration typeName (Nothing) identifier) = (printTypeName typeName) ++ (printIdentifier identifier)
+printVariableDeclaration (VariableDeclaration typeName (Just dataLocation) identifier) = (printTypeName typeName) ++ " " ++ (printDataLocation dataLocation) ++ " " ++ (printIdentifier identifier)
+printVariableDeclaration (VariableDeclaration typeName (Nothing) identifier) = (printTypeName typeName) ++ " " ++ (printIdentifier identifier)
 
 printReceiveFunctionDefinition :: ReceiveFunctionDefinition -> Int -> String
 printReceiveFunctionDefinition (ReceiveFunctionDefinition receiveModifiers (Just block)) tabCount = "receive ( )" ++ (printReceiveModifiersList receiveModifiers) ++ (printBlock block (tabCount + 1))

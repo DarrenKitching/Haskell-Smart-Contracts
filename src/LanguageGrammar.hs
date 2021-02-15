@@ -244,7 +244,7 @@ data ForInitialiser = VarInitialse VariableDeclarationStatement
 data ForStatement = ForStatement ForInitialiser (Maybe ExpressionStatement) (Maybe Expression) Statement -- Statement could be a block therefore a block of statements
 data ReturnStatement = ReturnStatement (Maybe Expression)
 data ExpressionStatement = ExpressionStatement Expression -- expression with semicolon after
-data VariableDeclarationStatement = SingleVariableDeclartion VariableDeclaration Expression -- var = expression
+data VariableDeclarationStatement = SingleVariableDeclartion VariableDeclaration (Maybe Expression) -- var = expression
                                   | TupleVariableDeclaration VariableDeclarationTuple Expression -- var tuple = expression
 
 data VariableDeclaration = VariableDeclaration TypeName (Maybe DataLocation) Identifier
