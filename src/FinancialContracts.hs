@@ -86,8 +86,11 @@ setOwner = StateVariableElem $ StateVariableDeclaration (ElementaryType addressP
 setReceipient :: String -> ContractBodyElement
 setReceipient name = StateVariableElem $ StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (createIdentifier name) (Nothing)
 
-setBalance :: String -> ContractBodyElement
-setBalance name = StateVariableElem $ stateMappingDeclaration name (createMappingFromType address (ElementaryType uint)) []
+setBalance :: ContractBodyElement
+setBalance = StateVariableElem $ stateMappingDeclaration "balance" (createMappingFromType address (ElementaryType uint)) []
+
+setAddresses :: String -> ContractBodyElement
+setAddresses name = StateVariableElem $ stateMappingDeclaration name (createMappingFromType address (ElementaryType uint)) []
 
 loop :: Int -> ContractBodyElement -> ContractBodyElement
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Just block))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (block))))
@@ -117,3 +120,6 @@ requireNotOwner = expressionToStatement $ ExpressionArgs (createIdentifierExpres
 
 giveOwnership :: ContractBodyElement
 giveOwnership = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier "giveOwnership")) (Just $ createParameterList [(addressPayable, "newOwner")]) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [requireNotOwner, (expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "newOwner"))])
+
+proportionalTo :: String -> ContractBodyElement -> ContractBodyElement
+proportionalTo var x = addRequirement x (expressionToStatement $ DivEquals (createIdentifierExpression "amount") (Div (Index (createIdentifierExpression var) (createIdentifierExpression "_to")) (createIdentifierExpression "100")))

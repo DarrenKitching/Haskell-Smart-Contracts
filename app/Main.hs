@@ -14,7 +14,7 @@ main = do
   outputContract shorternedCoinExample "ContractOutputs/AbstractionTest.sol"
   outputContract ballotExample "ContractOutputs/Ballot.sol"
   outputContract finance "ContractOutputs/Finance.sol"
-  -- outputContract shareholders "ContractOutputs/ShareHolders.sol"
+  outputContract shareholders "ContractOutputs/ShareHolders.sol"
 
 outputContract :: Contract -> String -> IO ()
 outputContract contract destination = do
