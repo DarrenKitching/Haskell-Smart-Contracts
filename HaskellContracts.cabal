@@ -33,6 +33,8 @@ library
       LanguageGrammarPrinting
       Abstractions
       ContractExamples
+      FinancialContracts
+      FinancialExamples
       Lib
   other-modules:
       Paths_HaskellContracts

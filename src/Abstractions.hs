@@ -8,15 +8,15 @@ createIdentifier (x:xs) = Identifier x xs
 createIdentifierExpression :: String -> Expression
 createIdentifierExpression (xs) = IdentifierExpr $ (createIdentifier xs)
 
-createPragma :: String -> Solidity -> Solidity -- use a string and other top level components to create top level pragma
-createPragma (x:xs) solidity = Pragma (PragmaToken x) (createPragmaTokenList xs) solidity
+createPragma :: String -> Contract -> Contract -- use a string and other top level components to create top level pragma
+createPragma (x:xs) contract = Pragma (PragmaToken x) (createPragmaTokenList xs) contract
 
 createPragmaTokenList :: String -> [PragmaToken]
 createPragmaTokenList "" = []
 createPragmaTokenList (x:xs) = (PragmaToken x) : (createPragmaTokenList xs)
 
-defineContract :: String -> [ContractBodyElement] -> Solidity -> Solidity
-defineContract name elements solidity = ContractDef (ContractDefinition (Nothing) (createIdentifier name) (Nothing) elements) solidity
+defineContract :: String -> [ContractBodyElement] -> Contract -> Contract
+defineContract name elements contract = ContractDef (ContractDefinition (Nothing) (createIdentifier name) (Nothing) elements) contract
 
 stateAddressDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration
 stateAddressDeclaration name modifiers = StateVariableDeclaration (ElementaryType $ AddressType (Nothing)) modifiers (createIdentifier name) (Nothing)
@@ -199,6 +199,21 @@ createBoolLiteral Prelude.False = BoolLit (LanguageGrammar.False)
 
 expressionToStatement :: Expression -> Statement
 expressionToStatement e = ExprStatement $ ExpressionStatement e
+
+joinConstructors :: ContractBodyElement -> ContractBodyElement -> ContractBodyElement
+joinConstructors (ConstructElem (Constructor (params1) (Nothing) (block1))) (ConstructElem (Constructor (params2) (Nothing) (block2))) = ConstructElem (Constructor (joinParamLists params1 params2) (Nothing) (joinBlocks block1 block2))
+
+joinBlocks :: Block -> Block -> Block
+joinBlocks (Block xs) (Block ys) = (Block (xs ++ ys))
+
+joinParamLists :: (Maybe ParameterList) -> (Maybe ParameterList) -> (Maybe ParameterList)
+joinParamLists (Nothing) (Nothing) = Nothing
+joinParamLists (Just x) (Nothing) = Just x
+joinParamLists (Nothing) (Just y) = Just y
+joinParamLists (Just x) (Just y) = Just (joinParams x y)
+
+joinParams :: ParameterList -> ParameterList -> ParameterList
+joinParams (ParameterList typeName (location) (identifier) (_)) (y) = ParameterList typeName (location) (identifier) (Just y)
 
 public = VisibilityModifier PublicVisibility
 view = StateMutabilityModifier View

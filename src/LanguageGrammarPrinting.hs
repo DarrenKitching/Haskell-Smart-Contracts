@@ -6,7 +6,7 @@ import YulLanguageGrammarPrinting
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
 
-printSolidity :: Solidity -> String
+printSolidity :: Contract -> String
 printSolidity (EOF) = ""
 printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token) ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
 printSolidity (ImportDir directive nextHighLevel) = (printImportDirective directive) ++ (printSolidity nextHighLevel)
@@ -614,9 +614,9 @@ printInheritanceSpecifier (InheritanceSpecifier identifierPath (Just callArgumen
 printInheritanceSpecifier (InheritanceSpecifier identifierPath (Nothing)) = (printIdentifierPath identifierPath)
 
 printTupleExpression :: TupleExpression -> String
-printTupleExpression (TupleExpression []) = "[]"
-printTupleExpression (TupleExpression [x]) = "[" ++ (printExpression x) ++"]"
-printTupleExpression (TupleExpression expressions) = "[" ++ (printCommaExpressions expressions) ++ "]"
+printTupleExpression (TupleExpression []) = "()"
+printTupleExpression (TupleExpression [x]) = "(" ++ (printExpression x) ++")"
+printTupleExpression (TupleExpression expressions) = "(" ++ (printCommaExpressions expressions) ++ ")"
 
 printInlineArrayExpression :: InlineArrayExpression -> String
 printInlineArrayExpression (InlineArrayExpression expression []) = "[" ++ (printExpression expression) ++ "]"

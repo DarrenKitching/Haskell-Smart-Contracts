@@ -1,16 +1,16 @@
 module LanguageGrammar where
 import YulLanguageGrammar
 
-data Solidity = EOF
-              | Pragma PragmaToken [PragmaToken] Solidity -- At least one PragmaToken. Semi colon at end
-              | ImportDir ImportDirective Solidity
-              | ContractDef ContractDefinition Solidity
-              | InterfaceDef InterfaceDefinition Solidity
-              | LibraryDef LibraryDefinition Solidity
-              | FunctionDef FunctionDefinition Solidity
-              | ConstVariableDec ConstantVariableDeclaration Solidity
-              | StructDef StructDefinition Solidity
-              | EnumDef EnumDefinition Solidity
+data Contract = EOF
+              | Pragma PragmaToken [PragmaToken] Contract -- At least one PragmaToken. Semi colon at end
+              | ImportDir ImportDirective Contract
+              | ContractDef ContractDefinition Contract
+              | InterfaceDef InterfaceDefinition Contract
+              | LibraryDef LibraryDefinition Contract
+              | FunctionDef FunctionDefinition Contract
+              | ConstVariableDec ConstantVariableDeclaration Contract
+              | StructDef StructDefinition Contract
+              | EnumDef EnumDefinition Contract
 
 data PragmaToken = PragmaToken Char -- any char except a semicolon
 
