@@ -22,6 +22,7 @@ contract ShareHolders {
 		balance[_to] += amount; 
 	}
 	function depositToContract() public payable {
+		require(owner == msg.sender); 
 		contractBalance += msg.value; 
 	}
 }

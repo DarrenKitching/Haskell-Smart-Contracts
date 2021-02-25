@@ -13,8 +13,10 @@ main = do
   outputContract coinExample "ContractOutputs/Test.sol"
   outputContract shorternedCoinExample "ContractOutputs/AbstractionTest.sol"
   outputContract ballotExample "ContractOutputs/Ballot.sol"
-  outputContract finance "ContractOutputs/Finance.sol"
+  outputContract bank "ContractOutputs/Bank.sol"
   outputContract shareholders "ContractOutputs/ShareHolders.sol"
+  outputContract interest "ContractOutputs/Interest.sol"
+  outputContract taxes "ContractOutputs/Taxes.sol"
 
 outputContract :: Contract -> String -> IO ()
 outputContract contract destination = do
