@@ -1,8 +1,10 @@
 module LanguageGrammar where
 import YulLanguageGrammar
 
+-- This module contains a representation of the Solidity Language Grammar in Haskell
+
 data Contract = EOF
-              | Pragma PragmaToken [PragmaToken] Contract -- At least one PragmaToken. Semi colon at end
+              | Pragma PragmaToken [PragmaToken] Contract
               | ImportDir ImportDirective Contract
               | ContractDef ContractDefinition Contract
               | InterfaceDef InterfaceDefinition Contract
@@ -12,22 +14,22 @@ data Contract = EOF
               | StructDef StructDefinition Contract
               | EnumDef EnumDefinition Contract
 
-data PragmaToken = PragmaToken Char -- any char except a semicolon
+data PragmaToken = PragmaToken Char
 
-data ImportDirective = ImportPath Path (Maybe Identifier) -- import path or import path as identifier
-                     | ImportSymbolAlisases SymbolAliases Path -- import symbol aliases from this path
-                     | ImportStar Identifier Path -- import * as identifier from path
+data ImportDirective = ImportPath Path (Maybe Identifier)
+                     | ImportSymbolAlisases SymbolAliases Path
+                     | ImportStar Identifier Path
 
-data Path = DoubleQuotedPath StringLitDouble | SingleQuotedPath StringLitSingle -- must be non empty
+data Path = DoubleQuotedPath StringLitDouble | SingleQuotedPath StringLitSingle
 
 data Identifier = From
-                | Identifier Char [Char] -- Char can be a letter, a number, a dollar sign or an underscore
+                | Identifier Char [Char]
 
 data SymbolAliases = IdentifierAlias Identifier
                    | As Identifier Identifier
                    | List [SymbolAliases]
 
-data EnumDefinition = EnumDefinition Identifier Identifier [Identifier] -- There must be at least one identifier in the block
+data EnumDefinition = EnumDefinition Identifier Identifier [Identifier]
 
 data Abstract
 
@@ -49,7 +51,7 @@ data DataLocation = Memory | Storage | CallData
 data IdentifierPath = IdentifierPath Identifier [Identifier]
 
 data Modifiers = Invocation ModifierInvocation
-               | PayableModifier -- just Payable
+               | PayableModifier
                | Internal
                | Public
 
@@ -79,23 +81,23 @@ data MappingType = MappingType MappingKeyType TypeName
 data MappingKeyType = ElementaryMapping ElementaryTypeName
                     | IdentifierMapping IdentifierPath
 
-data CallArgumentList = CallArgumentExpr Expression [Expression] -- one or more expressions
-                      | CallArgumentExprIdent [(Identifier, Expression)] -- 0 or more Identifier Expression pairs
+data CallArgumentList = CallArgumentExpr Expression [Expression]
+                      | CallArgumentExprIdent [(Identifier, Expression)]
 
 data ModifierInvocation = ModifierInvocation IdentifierPath (Maybe CallArgumentList)
 
 data ParameterList = ParameterList TypeName (Maybe DataLocation) (Maybe Identifier) (Maybe ParameterList)
 
-data ConstructorDefinition = Constructor (Maybe ParameterList) (Maybe [Modifiers]) Block -- parameter list and modifiers can be empty
+data ConstructorDefinition = Constructor (Maybe ParameterList) (Maybe [Modifiers]) Block
 
 data InheritanceSpecifier = InheritanceSpecifier IdentifierPath (Maybe CallArgumentList)
 
 data InterfaceDefinition = InterfaceDefinition Identifier (Maybe [InheritanceSpecifier]) [ContractBodyElement]
 
-data UsingDirective = UsingDirective IdentifierPath (Maybe TypeName) -- either for * or for TypeName
+data UsingDirective = UsingDirective IdentifierPath (Maybe TypeName)
 
 data Expression = Index Expression Expression
-                | IndexOfIndex Expression ((Maybe Expression),(Maybe Expression)) -- double check
+                | IndexOfIndex Expression ((Maybe Expression),(Maybe Expression))
                 | DotIdentifier Expression Identifier
                 | DotAddress Expression
                 | IdentifierExpression Expression [(Identifier, Expression)]
@@ -105,7 +107,7 @@ data Expression = Index Expression Expression
                 | PreIncrement Expression
                 | PreDecrement Expression
                 | Not Expression
-                | Tilda Expression -- check operator use
+                | Tilda Expression
                 | Delete Expression
                 | Minus Expression
                 | PostIncrement Expression
@@ -120,7 +122,7 @@ data Expression = Index Expression Expression
                 | ArithmeticRightShift Expression Expression
                 | LogicalRightShift Expression Expression
                 | BitAND Expression Expression
-                | Caret Expression Expression -- ^ operator -- check usage
+                | Caret Expression Expression
                 | BitOR Expression Expression
                 | LessThan Expression Expression
                 | GreaterThan Expression Expression
@@ -128,12 +130,12 @@ data Expression = Index Expression Expression
                 | GreaterThanEQualTo Expression Expression
                 | Equality Expression Expression
                 | InEquality Expression Expression
-                | AND Expression Expression -- logical and &&
-                | OR Expression Expression -- logical or ||
-                | InlineIf Expression Expression Expression -- question mark operator
+                | AND Expression Expression
+                | OR Expression Expression
+                | InlineIf Expression Expression Expression
                 | Equals Expression Expression
-                | OrEquals Expression Expression -- |=
-                | CaretEquals Expression Expression -- ^=
+                | OrEquals Expression Expression
+                | CaretEquals Expression Expression
                 | AndEquals Expression Expression
                 | LeftShiftEquals Expression Expression
                 | RightShiftEquals Expression Expression
@@ -161,9 +163,9 @@ data BooleanLiteral = True | False
 data NumberLiteral = Decimal DecimalNumber (Maybe NumberUnit)
                    | HexaDecimal HexNumber (Maybe NumberUnit)
 
-data DecimalNumber = DecimalNumber [Char] -- add in extra constraints
+data DecimalNumber = DecimalNumber [Char]
 
-data HexNumber = HexNumber [Char] -- begins with 0x chars can be 0-9 A-F or underscore
+data HexNumber = HexNumber [Char]
 
 data NumberUnit = Wei
                 | GWei
@@ -177,22 +179,22 @@ data NumberUnit = Wei
 
 data Underscore
 
-data HexStringLiteral = HexStringLiteral HexString [HexString] -- at least one hex-string
+data HexStringLiteral = HexStringLiteral HexString [HexString]
 
 data HexString = DoubleQuotedHex [(Char, Char, Maybe Underscore)]
                | SingeQuoteHex [(Char, Char, Maybe Underscore)]
 
-data TupleExpression = TupleExpression [Expression] -- list of comma seperated expressions paired together
+data TupleExpression = TupleExpression [Expression]
 
-data InlineArrayExpression = InlineArrayExpression Expression [Expression] -- at least one expression
+data InlineArrayExpression = InlineArrayExpression Expression [Expression]
 
-data UnicodeStringLiteral = UnicodeStringLiteral (Maybe Char) [EscapeSequence] -- add in forwardslash unicode string lit
+data UnicodeStringLiteral = UnicodeStringLiteral (Maybe Char) [EscapeSequence]
 
 data FunctionTypeName = FunctionTypeName (Maybe ParameterList) ([StateMutability]) (Maybe Visibility) ([StateMutability]) (Maybe ParameterList)
 
 data StateMutability = Pure
                      | View
-                     | PayableMutability -- just payable
+                     | PayableMutability
 
 data Visibility = InternalVisibility
                 | ExternalVisibility
@@ -204,12 +206,12 @@ data EventDefinition = EventDefinition Identifier [EventParameter] (Maybe Anonym
 data Indexed
 data EventParameter = EventParameter TypeName (Maybe Indexed) (Maybe Identifier)
 
-data StructDefinition = StructDefinition Identifier StructMember [StructMember] -- at least one struct member
+data StructDefinition = StructDefinition Identifier StructMember [StructMember]
 data StructMember = StructMember TypeName Identifier
 
 data LibraryDefinition = LibraryDefinition Identifier [ContractBodyElement]
 
-data FunctionName = IdentifierName Identifier | Fallback | Receive -- ask about this implementation
+data FunctionName = IdentifierName Identifier | Fallback | Receive
 data FunctionModifiers = VisibilityModifier Visibility | StateMutabilityModifier StateMutability | ModifierInvoc ModifierInvocation | Virtual | OverrideMod OverrideSpecifier
 
 data FunctionDefinition = FunctionaDefinition FunctionName (Maybe ParameterList) [FunctionModifiers] (Maybe ParameterList) (Maybe Block)
@@ -218,7 +220,7 @@ data OverrideSpecifier = OverrideSpecifier (Maybe [IdentifierPath])
 
 data StateVariableModifiers = PublicState | PrivateState | InternalState | ConstantState | OverrideState OverrideSpecifier | ImmutableState
 
-data StateVariableDeclaration = StateVariableDeclaration TypeName [StateVariableModifiers] Identifier (Maybe Expression) -- maybe equals an expression to initialse
+data StateVariableDeclaration = StateVariableDeclaration TypeName [StateVariableModifiers] Identifier (Maybe Expression)
 
 data Statement = BlockStatement Block
                | VarDec VariableDeclarationStatement
@@ -237,15 +239,15 @@ data Statement = BlockStatement Block
 data WhileStatement = WhileStatement Expression Statement
 data DoWhileStatement = DoWhileStatement Statement Expression
 
-data IfStatement = IfStatement Expression Statement (Maybe Statement) -- maybe else statement
+data IfStatement = IfStatement Expression Statement (Maybe Statement)
 data ForInitialiser = VarInitialse VariableDeclarationStatement
                     | ExprInitialse ExpressionStatement
                     | None
-data ForStatement = ForStatement ForInitialiser (Maybe ExpressionStatement) (Maybe Expression) Statement -- Statement could be a block therefore a block of statements
+data ForStatement = ForStatement ForInitialiser (Maybe ExpressionStatement) (Maybe Expression) Statement
 data ReturnStatement = ReturnStatement (Maybe Expression)
-data ExpressionStatement = ExpressionStatement Expression -- expression with semicolon after
-data VariableDeclarationStatement = SingleVariableDeclartion VariableDeclaration (Maybe Expression) -- var = expression
-                                  | TupleVariableDeclaration VariableDeclarationTuple Expression -- var tuple = expression
+data ExpressionStatement = ExpressionStatement Expression
+data VariableDeclarationStatement = SingleVariableDeclartion VariableDeclaration (Maybe Expression)
+                                  | TupleVariableDeclaration VariableDeclarationTuple Expression
 
 data VariableDeclaration = VariableDeclaration TypeName (Maybe DataLocation) Identifier
 data Comma
@@ -256,19 +258,19 @@ data AssemblyStatement = AssemblyStatement (Maybe Evmasm) [YulStatement]
 
 data EmitStatement = EmitStatement Expression CallArgumentList
 
-data TryStatement = TryStatement Expression (Maybe ParameterList) Block CatchClause [CatchClause] -- maybe parameterlist of returns. At least one catch clause
+data TryStatement = TryStatement Expression (Maybe ParameterList) Block CatchClause [CatchClause]
 data CatchClause = CatchClause Block
                  | CatchClauseParameters (Maybe Identifier) ParameterList Block
 
-data BreakStatement = BreakStatement -- break;
-data ContinueStatement = ContinueStatement -- continue;
+data BreakStatement = BreakStatement
+data ContinueStatement = ContinueStatement
 
 data ReceiveModifiers = ExternalReceive | PayableReceive | ModifierInvocReceive ModifierInvocation | VirtualReceive | OverrideReceive OverrideSpecifier
 data ReceiveFunctionDefinition = ReceiveFunctionDefinition [ReceiveModifiers] (Maybe Block)
 data FallBackModifier = ExternalFallBack | StateMutabilityFallBack StateMutability | ModifierInvocFallBack ModifierInvocation | VirtualFallBack | OverrideSpecFallBack OverrideSpecifier
 data FallbackFunctionDefinition = FallbackFunctionDefinition ParameterList [FallBackModifier] (Maybe ParameterList) (Maybe Block)
 
-data ModifierDefinition = ModifierDefinition Identifier (Maybe ParameterList) (Maybe OverrideSpecifier) (Maybe Block) -- if given overrideSpecifier then print virtual
+data ModifierDefinition = ModifierDefinition Identifier (Maybe ParameterList) (Maybe OverrideSpecifier) (Maybe Block)
 
 data ConstantVariableDeclaration = ConstantVariableDeclaration TypeName Identifier Expression
 

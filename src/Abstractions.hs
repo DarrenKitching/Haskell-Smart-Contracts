@@ -2,6 +2,8 @@ module Abstractions where
 import LanguageGrammar
 import YulLanguageGrammar
 
+-- This module contains functions for quickly generating Solidity language grammar components
+
 createIdentifier :: String -> Identifier -- use a string to create an identifier, string must have at least one char
 createIdentifier (x:xs) = Identifier x xs
 

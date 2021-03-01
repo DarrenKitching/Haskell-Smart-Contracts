@@ -10,16 +10,17 @@ import FinancialExamples
 
 main :: IO ()
 main = do
-  outputContract coinExample "ContractOutputs/Test.sol"
-  outputContract shorternedCoinExample "ContractOutputs/AbstractionTest.sol"
-  outputContract ballotExample "ContractOutputs/Ballot.sol"
+  -- outputSolidityContract is printing contracts defined in the Solidity Langugage Grammar. outputContract is print contracts defined in my DSL
+  outputSolidityContract coinExample "ContractOutputs/Test.sol"
+  outputSolidityContract shorternedCoinExample "ContractOutputs/AbstractionTest.sol"
+  outputSolidityContract ballotExample "ContractOutputs/Ballot.sol"
   outputContract bank "ContractOutputs/Bank.sol"
   outputContract shareholders "ContractOutputs/ShareHolders.sol"
   outputContract interest "ContractOutputs/Interest.sol"
   outputContract taxes "ContractOutputs/Taxes.sol"
 
-outputContract :: Contract -> String -> IO ()
-outputContract contract destination = do
+outputSolidityContract :: Contract -> String -> IO ()
+outputSolidityContract contract destination = do
   writeFile destination ""
   appendFile destination "// SPDX-License-Identifier: GPL-3.0\n"
   appendFile destination (printSolidity contract)

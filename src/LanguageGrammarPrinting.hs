@@ -3,6 +3,8 @@ import LanguageGrammar
 import YulLanguageGrammar
 import YulLanguageGrammarPrinting
 
+-- This module allows the Haskell representation of the Solidity language grammar to be converted to text for compilation
+
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
 

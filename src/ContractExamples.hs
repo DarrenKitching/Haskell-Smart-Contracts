@@ -4,8 +4,9 @@ import LanguageGrammarPrinting
 import LanguageGrammar
 import Abstractions
 
--- Coin Example --
+-- This module contains examples of contracts written in the Solidity Language Grammar
 
+-- Coin Example --
 coinExample = (Pragma (PragmaToken 's') [(PragmaToken 'o'), (PragmaToken 'l'), (PragmaToken 'i'), (PragmaToken 'd'), (PragmaToken 'i'), (PragmaToken 't'), (PragmaToken 'y'), (PragmaToken ' '), (PragmaToken '^'), (PragmaToken '0'), (PragmaToken '.'), (PragmaToken '7'), (PragmaToken '.'), (PragmaToken '4')] contractDef)
 contractDef = (ContractDef (ContractDefinition (Nothing) (Identifier 'S' ['i', 'm', 'p', 'l', 'e', 'S', 't', 'o','r', 'a', 'g', 'e']) (Nothing) [storedData, setFunc, getFunc]) EOF)
 storedData = (StateVariableElem (StateVariableDeclaration (ElementaryType $ UnsignedIntType UInt) [] (Identifier 's' ['t', 'o', 'r', 'e', 'd', 'D', 'a', 't','a']) (Nothing)))
@@ -30,22 +31,6 @@ shortenedGetParam = createParameterList [(uint, "")]
 shortenedGetBlock = createBlock [(Return (ReturnStatement (Just (IdentifierExpr $ createIdentifier "storedData"))))]
 shortenedGetFunc = createReturnFunction "get" [public, view] (Nothing) shortenedGetBlock (shortenedGetParam)
 -- Coin Example --
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 -- Voting Example --
 ballotExample = createPragma "solidity >=0.7.0 <0.9.0" ballotContract

@@ -2,6 +2,8 @@ module YulLanguageGrammarPrinting where
 import LanguageGrammar
 import YulLanguageGrammar
 
+-- This module allows the Haskell representation of the YUL language grammar to be converted to text for compilation
+
 printYulStatementList :: [YulStatement] -> String
 printYulStatementList [] = ""
 printYulStatementList (x:xs) = (printYulStatement x) ++ (printYulStatementList xs)

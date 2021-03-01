@@ -1,11 +1,12 @@
 module YulLanguageGrammar where
 
+-- This module contains a representation of the YUL Language Grammar in Haskell
+
 data StringLitDouble = DoubleQuotePrintable [Char] | Double EscapeSequence
 data StringLitSingle = SingleQuotedPrintable [Char] | Single EscapeSequence
 data StringLiteral = StringLiteralDouble StringLitDouble
                    | StringLiteralSingle StringLitSingle
--- type DoubleQuotePrintable = Char -- need rule that this char can't be a backslash or double quotes backslash
--- type SingleQuotedPrintable = Char -- need ruel that this char can't be a single quote or backslash
+
 data EscapeSequence = U Char Char Char Char -- additional rules needed
                    | X Char Char
                    | Simple Char

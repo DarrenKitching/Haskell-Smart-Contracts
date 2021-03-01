@@ -19,4 +19,7 @@ contract Bank {
 		balance[msg.sender] -= amount; 
 		balance[_to] += amount; 
 	}
+	function getBalance() public view returns (uint){
+		return balance[msg.sender];
+	}
 }

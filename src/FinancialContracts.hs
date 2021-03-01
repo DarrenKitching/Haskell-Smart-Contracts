@@ -1,15 +1,57 @@
 module FinancialContracts where
 import LanguageGrammar
+import LanguageGrammarPrinting
 import YulLanguageGrammar
 import Abstractions
 
-data Amount = All | SpecificAmount -- perform this action on the entire amount, the user's specified share in a variable or a specific amount supplied
+data Language = CreateFinancialFunction String FinancialFunctionality Amount Source
+              | CreateCoreFunction String CoreFunctionality
+              | CreateContract String [Language]
+              | Set SetElement
+              | ProportionalTo Rate Language
+              | Loop Int Language
+              | Conditioned Condition Language
+
+data Condition = RequireOwner | RequireStarted | RequiredNotEnded | RequireBetweenDates
+data SetElement = Owner | ContractBal | StartTime | EndTime | Receipient String | Balances | Addresses String | Interest | Tax | DIRT | SharesOwned | TotalShares
+data CoreFunctionality = GiveOwnership | GetBalance
+data Amount = All | SpecificAmount
 data Source = ContractBalance | UserBalance
-data When = Anytime | Before | After | Countdown -- action can be performed at anytime, before a specific time, after a specific time within a certain period
-data Functionality = Withdraw | Deposit | Transfer | Blank -- Withdraw, deposit or transfer money
-data Conditioned = HasWon | HasLost -- Only a winner can perform the aciton or only the loser can perform the action.
-data ExchangeType = FromContract | FromUser -- specifies if an action e.g. withdrawal is from the contract balance or the user's personal balance
-data ProportionalTo = InterestRate | TaxRate | Shares | DIRT
+data FinancialFunctionality = Withdraw | Deposit | Transfer | Blank
+data Rate = InterestRate | TaxRate | Shares | DIRTRate
+
+outputContract :: Language -> String -> IO ()
+outputContract (CreateContract name elements) destination = do
+  writeFile destination ""
+  appendFile destination "// SPDX-License-Identifier: GPL-3.0\n"
+  appendFile destination (printSolidity (createContract name (convertToSolidity elements)))
+
+convertToSolidity :: [Language] -> [ContractBodyElement]
+convertToSolidity [] = []
+convertToSolidity (x:xs) = (convertElementToSolidity x) : (convertToSolidity xs)
+
+convertElementToSolidity :: Language -> ContractBodyElement
+convertElementToSolidity (CreateFinancialFunction name functionality amount source) = createFunction name functionality amount source
+convertElementToSolidity (CreateCoreFunction name GiveOwnership) = giveOwnership name
+convertElementToSolidity (CreateCoreFunction name GetBalance) = (getBalance name)
+convertElementToSolidity (Set Owner) = setOwner
+convertElementToSolidity (Set ContractBal) = setContractBalance
+convertElementToSolidity (Set StartTime) = setStartTime
+convertElementToSolidity (Set EndTime) = setEndTime
+convertElementToSolidity (Set (Receipient name)) = (setReceipient name)
+convertElementToSolidity (Set Balances) = setBalance
+convertElementToSolidity (Set (Addresses name)) = setAddresses name
+convertElementToSolidity (Set Interest) = setInterestRate
+convertElementToSolidity (Set Tax) = setTaxRate
+convertElementToSolidity (Set DIRT) = setDIRT
+convertElementToSolidity (Set SharesOwned) = setShares
+convertElementToSolidity (Set TotalShares) = setTotalShares
+convertElementToSolidity (ProportionalTo rate language) = proportionalTo rate (convertElementToSolidity language)
+convertElementToSolidity (Loop times language) = loop times (convertElementToSolidity language)
+convertElementToSolidity (Conditioned (RequireOwner) language) = ifOwner (convertElementToSolidity language)
+convertElementToSolidity (Conditioned (RequireStarted) language) = ifAfterStart (convertElementToSolidity language)
+convertElementToSolidity (Conditioned (RequiredNotEnded) language) = ifBeforeEnd (convertElementToSolidity language)
+convertElementToSolidity (Conditioned (RequireBetweenDates) language) = ifBetweenDates (convertElementToSolidity language)
 
 contractAmount = uintVariableAssignmentDeclaration "amount" (DotIdentifier (ExpressionArgs (createIdentifierExpression "address") (CallArgumentExpr (createIdentifierExpression "this") [])) (createIdentifier "balance"))
 userAmount = uintVariableAssignmentDeclaration "userBalance" (Index (createIdentifierExpression "balance") (createIdentifierExpression "msg.sender"))
@@ -27,7 +69,7 @@ requireSent = expressionToStatement $ ExpressionArgs (createIdentifierExpression
 depositUserShare = expressionToStatement $ (PlusEquals (Index (createIdentifierExpression "balance") (createIdentifierExpression "msg.sender")) (createIdentifierExpression "msg.value"))
 incrementContractBalance = expressionToStatement $ (PlusEquals (createIdentifierExpression "contractBalance") (createIdentifierExpression "msg.value"))
 
-createFunction :: String -> Functionality -> Amount -> Source -> ContractBodyElement
+createFunction :: String -> FinancialFunctionality -> Amount -> Source -> ContractBodyElement
 createFunction name Withdraw All UserBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [VarDec $ userAmount, decrementUserAmount, transferUserAmount])
 createFunction name Withdraw SpecificAmount UserBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(uint, "amount")]) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [requireSufficientBalance, decrementBalance, transferWithdrawal])
 createFunction name Withdraw All ContractBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [transferContractBalance, contractBalanceAssignment])
@@ -103,6 +145,9 @@ setShares = StateVariableElem $ stateMappingDeclaration "shares" (createMappingF
 setAddresses :: String -> ContractBodyElement
 setAddresses name = StateVariableElem $ stateMappingDeclaration name (createMappingFromType address (ElementaryType uint)) []
 
+setTotalShares :: ContractBodyElement
+setTotalShares = StateVariableElem $ StateVariableDeclaration (ElementaryType uint) [PublicState] (createIdentifier "totalShares") (Nothing)
+
 loop :: Int -> ContractBodyElement -> ContractBodyElement
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Just block))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (block))))
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Nothing))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (createBlock []))))
@@ -115,15 +160,16 @@ interestRateAssignment = expressionToStatement $ Equals (createIdentifierExpress
 
 contractBalanceAssignment = expressionToStatement $ Equals (createIdentifierExpression "contractBalance") (createIdentifierExpression "0")
 ownerAssignment = expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")
+totalSharesAssignment = expressionToStatement $ Equals (createIdentifierExpression "totalShares") (createIdentifierExpression "_totalShares")
 
 buildConstructor :: [ContractBodyElement] -> ContractBodyElement
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 's' ['t', 'a', 'r', 't']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_start")]) (Nothing) (createBlock [startAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'e' ['n', 'd']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_end")]) (Nothing) (createBlock [endAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'c' ['o', 'n', 't', 'r', 'a', 'c', 't', 'B', 'a', 'l', 'a', 'n', 'c', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [contractBalanceAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 't' ['o', 't', 'a', 'l', 'S', 'h', 'a', 'r', 'e', 's']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_totalShares")]) (Nothing) (createBlock [totalSharesAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 't' ['a', 'x', 'R', 'a', 't', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_taxRate")]) (Nothing) (createBlock [taxRateAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'i' ['n', 't', 'e', 'r', 'e', 's', 't', 'R', 'a', 't', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_interestRate")]) (Nothing) (createBlock [interestRateAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'D' ['I', 'R', 'T']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "_DIRT")]) (Nothing) (createBlock [dirtAssignment]))) (buildConstructor xs)
-
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (Identifier 'o' ['w', 'n', 'e', 'r']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [ownerAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(addressPayable, (['_'] ++ y:ys))]) (Nothing) (createBlock [(expressionToStatement $ Equals (createIdentifierExpression (y:ys)) (createIdentifierExpression (['_'] ++[y] ++ ys)))]))) (buildConstructor xs)
 buildConstructor (_:xs) = buildConstructor xs
@@ -138,10 +184,13 @@ addBlockToLoop (For (ForStatement initialise (exprStatement) (expr) oldBlock)) b
 requireNotOwner = expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (InEquality (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")) [])
 requireOwner = expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (Equality (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")) [])
 
-giveOwnership :: ContractBodyElement
-giveOwnership = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier "giveOwnership")) (Just $ createParameterList [(addressPayable, "newOwner")]) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [requireOwner, (expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "newOwner"))])
+giveOwnership :: String -> ContractBodyElement
+giveOwnership name = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(addressPayable, "newOwner")]) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [requireOwner, (expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "newOwner"))])
 
-proportionalTo :: ProportionalTo -> ContractBodyElement -> ContractBodyElement
-proportionalTo (Shares) x = addRequirement x (expressionToStatement $ DivEquals (createIdentifierExpression "amount") (Div (Index (createIdentifierExpression "shares") (createIdentifierExpression "_to")) (createIdentifierExpression "100")))
+getBalance :: String -> ContractBodyElement
+getBalance name = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier View] (Just $ ParameterList (ElementaryType uint) (Nothing) (Nothing) (Nothing)) (Just $ createBlock [(Return (ReturnStatement (Just ((Index (createIdentifierExpression "balance") (createIdentifierExpression "msg.sender"))))))])
+
+proportionalTo :: Rate -> ContractBodyElement -> ContractBodyElement
+proportionalTo (Shares) x = addRequirement x (expressionToStatement $ DivEquals (createIdentifierExpression "amount") (Div (Index (createIdentifierExpression "shares") (createIdentifierExpression "_to")) (createIdentifierExpression "totalShares")))
 proportionalTo (InterestRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression "amount") (Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "interestRate")))
 proportionalTo (TaxRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression "amount") (Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "taxRate")))
