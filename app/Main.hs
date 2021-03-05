@@ -18,6 +18,8 @@ main = do
   outputContract shareholders "ContractOutputs/ShareHolders.sol"
   outputContract interest "ContractOutputs/Interest.sol"
   outputContract taxes "ContractOutputs/Taxes.sol"
+  outputContract richestGame "ContractOutputs/RichestGame.sol"
+  outputContract auction "ContractOutputs/Auction.sol"
 
 outputSolidityContract :: Contract -> String -> IO ()
 outputSolidityContract contract destination = do

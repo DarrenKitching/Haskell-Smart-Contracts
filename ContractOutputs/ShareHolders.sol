@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract ShareHolders {
-	constructor (uint _totalShares) {
-		contractBalance = 0; 
+	constructor (uint _contractBalance, uint _totalShares) {
+		contractBalance = _contractBalance; 
 		owner = msg.sender; 
 		totalShares = _totalShares; 
 	}
@@ -12,9 +12,9 @@ contract ShareHolders {
 	mapping (address => uint) shares; 
 	mapping (address => uint) balance; 
 	function withdraw() public {
-		uint userBalance = balance[msg.sender];
-		balance[msg.sender] -= userBalance; 
-		payable(msg.sender).transfer(userBalance); 
+		uint amount = balance[msg.sender];
+		balance[msg.sender] -= amount; 
+		payable(msg.sender).transfer(amount); 
 	}
 	function payDividends(address payable _to, uint amount) public payable {
 		require(owner == msg.sender); 

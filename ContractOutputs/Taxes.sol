@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract Taxes {
-	constructor (uint _taxRate) {
+	constructor (uint _contractBalance, uint _taxRate) {
 		owner = msg.sender; 
-		contractBalance = 0; 
+		contractBalance = _contractBalance; 
 		taxRate = _taxRate; 
 	}
 	address payable public owner; 
