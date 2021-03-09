@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract Interest {
-	constructor (uint _contractBalance, uint _interestRate, uint _DIRT) {
+	constructor (uint _interestRate, uint _DIRT) {
 		owner = msg.sender; 
-		contractBalance = _contractBalance; 
+		contractBalance = 0; 
 		interestRate = _interestRate; 
 		DIRT = _DIRT; 
 	}

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract ShareHolders {
-	constructor (uint _contractBalance, uint _totalShares) {
-		contractBalance = _contractBalance; 
+	constructor (uint _totalShares) {
+		contractBalance = 0; 
 		owner = msg.sender; 
 		totalShares = _totalShares; 
 	}
@@ -26,5 +26,8 @@ contract ShareHolders {
 	function depositToContract() public payable {
 		require(owner == msg.sender); 
 		contractBalance += msg.value; 
+	}
+	function getBalance() public view returns (uint){
+		return balance[msg.sender];
 	}
 }

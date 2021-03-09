@@ -195,11 +195,13 @@ data FunctionTypeName = FunctionTypeName (Maybe ParameterList) ([StateMutability
 data StateMutability = Pure
                      | View
                      | PayableMutability
+     deriving (Eq)
 
 data Visibility = InternalVisibility
                 | ExternalVisibility
                 | PrivateVisibility
                 | PublicVisibility
+     deriving (Eq)
 
 data Anonymous
 data EventDefinition = EventDefinition Identifier [EventParameter] (Maybe Anonymous)

@@ -217,6 +217,32 @@ joinParamLists (Just x) (Just y) = Just (joinParams x y)
 joinParams :: ParameterList -> ParameterList -> ParameterList
 joinParams (ParameterList typeName (location) (identifier) (_)) (y) = ParameterList typeName (location) (identifier) (Just y)
 
+containsModifier :: FunctionModifiers -> [FunctionModifiers] -> Bool
+containsModifier x [] = Prelude.False
+containsModifier (VisibilityModifier visibility1) ((VisibilityModifier visibility2):ys) | visibility1 == visibility2 = Prelude.True
+containsModifier (StateMutabilityModifier stateMutability1) ((StateMutabilityModifier stateMutability2):ys) | stateMutability1 == stateMutability2 = Prelude.True
+containsModifier (Virtual) ((Virtual):ys) = Prelude.True
+containsModifier x (_:ys) = containsModifier x ys
+
+joinModifiers :: [FunctionModifiers] -> [FunctionModifiers] -> [FunctionModifiers]
+joinModifiers [] ys = ys
+joinModifiers (x:xs) (ys) | containsModifier x ys == Prelude.False = joinModifiers (xs) (x:ys)
+joinModifiers (_:xs) (ys) = joinModifiers (xs) (ys)
+
+containsPayable :: [FunctionModifiers] -> Bool
+containsPayable [] = Prelude.False
+containsPayable ((StateMutabilityModifier PayableMutability):xs) = Prelude.True
+containsPayable (_:xs) = containsPayable xs
+
+removeView :: [FunctionModifiers] -> [FunctionModifiers]
+removeView [] = []
+removeView ((StateMutabilityModifier View):xs) = removeView xs
+removeView (x:xs) = x : (removeView xs)
+
+removeDuplicateVisibility :: [FunctionModifiers] -> [FunctionModifiers]
+removeDuplicateVisibility xs | containsPayable xs = removeView xs
+removeDuplicateVisibility xs = xs
+
 public = VisibilityModifier PublicVisibility
 view = StateMutabilityModifier View
 

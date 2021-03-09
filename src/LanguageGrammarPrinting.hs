@@ -10,7 +10,8 @@ duplicate string n = concat $ replicate n string
 
 printSolidity :: Contract -> String
 printSolidity (EOF) = ""
-printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token) ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
+printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token)
+  ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
 printSolidity (ImportDir directive nextHighLevel) = (printImportDirective directive) ++ (printSolidity nextHighLevel)
 printSolidity (ContractDef definition nextHighLevel) = (printContractDefinition definition) ++ (printSolidity nextHighLevel)
 printSolidity (InterfaceDef definition nextHighLevel) = (printInterfaceDefinition definition) ++ (printSolidity nextHighLevel)

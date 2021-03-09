@@ -18,11 +18,11 @@ data Condition = RequireOwner | RequireStarted | RequireNotStarted | RequireEnde
                | RequireTrue Variable | RequireFalse Variable | ValueGreaterThan Variable Variable | ValueLessThan Variable Variable
                | ValueGreaterThanEqualTo Variable Variable | ValueLessThanEqualTo Variable Variable | EqualTo Variable Variable | NotEqualTo Variable Variable
 data Variable = Owner | ContractBal | StartTime | EndTime | RecipientAddress Recipient | Balances | Addresses String | SignedAmount String
-              | UnSignedAmount String | BooleanVariable String | Interest | Tax | DIRT | SharesOwned | TotalShares | MessageValue
-data CoreFunctionality = GiveOwnership | GetBalance | BecomeRecipient Recipient | GetRecipient Recipient | Update Variable Variable
+              | UnSignedAmount String | BooleanVariable String | Interest | Tax | DIRT | SharesOwned | TotalShares | MessageValue | BoolTrue | BoolFalse
+data CoreFunctionality = GiveOwnership | GetBalance | GetVariable Variable | BecomeRecipient Recipient | Update Variable Variable
 data Amount = All | SpecificAmount
 data Source = ContractBalance | UserBalance
-data FinancialFunctionality = Withdraw | Deposit | Transfer | Blank
+data FinancialFunctionality = Withdraw | Deposit | Transfer | BlankPayable
 data Rate = InterestRate | TaxRate | Shares | InterestRateLessDIRT
 
 outputContract :: Language -> String -> IO ()
@@ -41,7 +41,7 @@ convertElementToSolidity (CreateFinancialFunction name functionality amount sour
 convertElementToSolidity (CreateCoreFunction name GiveOwnership) = giveOwnership name
 convertElementToSolidity (CreateCoreFunction name GetBalance) = (getBalance name)
 convertElementToSolidity (CreateCoreFunction name (BecomeRecipient (recipient))) = (becomeRecipient name recipient)
-convertElementToSolidity (CreateCoreFunction name (GetRecipient (recipient))) = (getRecipient name recipient)
+convertElementToSolidity (CreateCoreFunction name (GetVariable (variable))) = (getVariable name variable)
 convertElementToSolidity (CreateCoreFunction name (Update (var1) (var2))) = (updateElement name var1 var2)
 convertElementToSolidity (Set Owner) = setOwner
 convertElementToSolidity (Set ContractBal) = setContractBalance
@@ -102,14 +102,11 @@ createFunction name Deposit All UserBalance = FunctionElem $ FunctionaDefinition
 createFunction name Deposit SpecificAmount UserBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(uint, "amount")]) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [(expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (Equality (createIdentifierExpression "msg.value") (createIdentifierExpression "amount")) [])), depositUserShare])
 createFunction name Deposit All ContractBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [incrementContractBalance])
 createFunction name Deposit SpecificAmount ContractBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(uint, "amount")]) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [(expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (Equality (createIdentifierExpression "msg.value") (createIdentifierExpression "amount")) [])), incrementContractBalance])
-
 createFunction name Transfer All ContractBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just sendParams) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [(expressionToStatement $ (PlusEquals (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "contractBalance"))), contractBalanceAssignment])
 createFunction name Transfer SpecificAmount ContractBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(addressPayable, "_to"), (uint, "amount")]) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [requireSufficientContractBalance, decrementContractBalance, expressionToStatement $ (PlusEquals (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "amount"))])
-
 createFunction name Transfer All UserBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just sendParams) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [VarDec $ userAmount, decrementUserAmount, (expressionToStatement $ (PlusEquals (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "amount")))])
 createFunction name Transfer SpecificAmount UserBalance = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Just $ createParameterList [(addressPayable, "_to"), (uint, "amount")]) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Just $ createBlock [requireSufficientBalance, decrementBalance, (expressionToStatement $ PlusEquals (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "amount"))])
-
-createFunction name Blank _ _ = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility] (Nothing) (Nothing)
+createFunction name BlankPayable _ _ = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier PayableMutability] (Nothing) (Nothing)
 
 createContract :: String -> [ContractBodyElement] -> Contract
 createContract name functions = createPragma "solidity ^0.7.4" $ ContractDef (ContractDefinition (Nothing) (createIdentifier name) (Nothing) ((buildConstructor functions):functions)) EOF
@@ -227,19 +224,12 @@ loop :: Int -> ContractBodyElement -> ContractBodyElement
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Just block))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (block))))
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Nothing))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (createBlock []))))
 
-startAssignment = expressionToStatement $ Equals (createIdentifierExpression "start") (createIdentifierExpression "_start")
-endAssignment = expressionToStatement $ Equals (createIdentifierExpression "end") (createIdentifierExpression "_end")
-taxRateAssignment = expressionToStatement $ Equals (createIdentifierExpression "taxRate") (createIdentifierExpression "_taxRate")
-dirtAssignment = expressionToStatement $ Equals (createIdentifierExpression "DIRT") (createIdentifierExpression "_DIRT")
-interestRateAssignment = expressionToStatement $ Equals (createIdentifierExpression "interestRate") (createIdentifierExpression "_interestRate")
-
 contractBalanceAssignment = expressionToStatement $ Equals (createIdentifierExpression "contractBalance") (createIdentifierExpression "0")
 ownerAssignment = expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")
-totalSharesAssignment = expressionToStatement $ Equals (createIdentifierExpression "totalShares") (createIdentifierExpression "_totalShares")
-
 
 buildConstructor :: [ContractBodyElement] -> ContractBodyElement
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (Identifier 'o' ['w', 'n', 'e', 'r']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [ownerAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'c' ['o', 'n', 't', 'r', 'a', 'c', 't', 'B', 'a', 'l', 'a', 'n', 'c', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [contractBalanceAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType varType) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(varType, (['_'] ++ y:ys))]) (Nothing) (createBlock [(expressionToStatement $ Equals (createIdentifierExpression (y:ys)) (createIdentifierExpression (['_'] ++[y] ++ ys)))]))) (buildConstructor xs)
 buildConstructor (_:xs) = buildConstructor xs
 buildConstructor [] = ConstructElem (Constructor (Nothing) (Nothing) (createBlock []))
@@ -262,8 +252,8 @@ giveOwnership name = FunctionElem $ FunctionaDefinition (IdentifierName (createI
 getBalance :: String -> ContractBodyElement
 getBalance name = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier View] (Just $ ParameterList (ElementaryType uint) (Nothing) (Nothing) (Nothing)) (Just $ createBlock [(Return (ReturnStatement (Just ((Index (createIdentifierExpression "balance") (createIdentifierExpression "msg.sender"))))))])
 
-getRecipient :: String -> Recipient -> ContractBodyElement
-getRecipient functionName (Recipient recipientName) = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier functionName)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier View] (Just $ ParameterList (ElementaryType addressPayable) (Nothing) (Nothing) (Nothing)) (Just $ createBlock [(Return (ReturnStatement (Just (createIdentifierExpression recipientName))))])
+getVariable :: String -> Variable -> ContractBodyElement
+getVariable functionName (variable) = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier functionName)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier View] (Just $ ParameterList (getType variable) (Nothing) (Nothing) (Nothing)) (Just $ createBlock [(Return (ReturnStatement (Just (createIdentifierExpression (getVariableName variable)))))])
 
 updateElement :: String -> Variable -> Variable -> ContractBodyElement
 updateElement name var1 var2 = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier name)) (Nothing) [VisibilityModifier PublicVisibility, StateMutabilityModifier View] (Nothing) (Just $ createBlock [expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (createIdentifierExpression (getVariableName var2))])
@@ -278,10 +268,10 @@ proportionalTo (TaxRate) x = addRequirement x (expressionToStatement $ Equals (c
 proportionalTo (InterestRateLessDIRT) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression "amount") (Mul ((Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "interestRate"))) (Sub (createIdentifierExpression "(1") (createIdentifierExpression "DIRT)")))  )
 
 join :: String -> ContractBodyElement -> ContractBodyElement -> ContractBodyElement
-join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Just block1))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Just block2))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) modifiers1 (Nothing) (Just (joinBlocks block1 block2))))
-join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Nothing))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Nothing))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) modifiers1 (Nothing) (Nothing)))
-join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Just block1))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Nothing))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) modifiers1 (Nothing) (Just (block1))))
-join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Nothing))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Just block2))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) modifiers1 (Nothing) (Just (block2))))
+join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Just block1))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Just block2))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) (removeDuplicateVisibility $ joinModifiers modifiers1 modifiers2) (Nothing) (Just (joinBlocks block1 block2))))
+join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Nothing))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Nothing))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) (removeDuplicateVisibility $ joinModifiers modifiers1 modifiers2) (Nothing) (Nothing)))
+join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Just block1))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Nothing))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) (removeDuplicateVisibility $ joinModifiers modifiers1 modifiers2) (Nothing) (Just (block1))))
+join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Nothing))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Just block2))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) (removeDuplicateVisibility $ joinModifiers modifiers1 modifiers2) (Nothing) (Just (block2))))
 
 getVariableName :: Variable -> String
 getVariableName Owner = "owner"
@@ -300,3 +290,25 @@ getVariableName DIRT = "DIRT"
 getVariableName SharesOwned = "shares"
 getVariableName TotalShares = "totalShares"
 getVariableName MessageValue = "msg.value"
+getVariableName BoolTrue = "true"
+getVariableName BoolFalse = "false"
+
+getType :: Variable -> TypeName
+getType Owner = ElementaryType uint
+getType ContractBal = ElementaryType uint
+getType StartTime = ElementaryType uint
+getType EndTime = ElementaryType uint
+getType (RecipientAddress _) = ElementaryType addressPayable
+getType Balances = Mapping $ createMappingFromType address (ElementaryType uint)
+getType (Addresses _) = Mapping $ createMappingFromType address (ElementaryType uint)
+getType (SignedAmount _) = ElementaryType int
+getType (UnSignedAmount _) = ElementaryType uint
+getType (BooleanVariable _) = ElementaryType $ Bool
+getType Interest = ElementaryType uint
+getType Tax = ElementaryType uint
+getType DIRT = ElementaryType uint
+getType SharesOwned = Mapping $ createMappingFromType address (ElementaryType uint)
+getType TotalShares = ElementaryType uint
+-- getType MessageValue a message should not be able to return message value
+getType BoolTrue = ElementaryType $ Bool
+getType BoolFalse = ElementaryType $ Bool

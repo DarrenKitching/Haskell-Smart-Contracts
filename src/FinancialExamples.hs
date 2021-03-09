@@ -6,14 +6,18 @@ withdrawFromBalance = CreateFinancialFunction "withdraw" Withdraw SpecificAmount
 depositFromBalance = CreateFinancialFunction "deposit" Deposit All UserBalance
 transferFromBalance = CreateFinancialFunction "transfer" Transfer SpecificAmount UserBalance
 getBal = CreateCoreFunction "getBalance" GetBalance
-bank = CreateContract "Bank" [Set Balances, Set Owner, withdrawFromBalance, depositFromBalance, transferFromBalance, getBal]
+bank = CreateContract "Bank" [Set Balances, Set Owner,
+  withdrawFromBalance, depositFromBalance, transferFromBalance, getBal]
 -- bank --
 
 -- shareholders --
-withdrawFromDividends = CreateFinancialFunction "withdraw" Withdraw All UserBalance-- allows user to withdraw all of their dividends that has accumulated
+withdrawFromDividends = CreateFinancialFunction "withdraw" Withdraw All UserBalance -- allows user to withdraw all of their dividends that has accumulated
 depositToContract = Conditioned (RequireOwner) (CreateFinancialFunction "depositToContract" Deposit All ContractBalance) -- contract owner (company) can deposit to the contract
-payDividends = Conditioned (RequireOwner) (ProportionalTo (Shares) (CreateFinancialFunction "payDividends" Transfer SpecificAmount ContractBalance)) -- the owner can pay shares to an address and it will be assigned an amount based on its ownership
-shareholders = CreateContract "ShareHolders" [Set ContractBal, Set Owner, Set TotalShares, Set SharesOwned, Set Balances, withdrawFromDividends, payDividends, depositToContract]
+payDividends = Conditioned (RequireOwner) (ProportionalTo (Shares)
+  (CreateFinancialFunction "payDividends" Transfer SpecificAmount ContractBalance)) -- the owner can pay shares to an address and it will be assigned an amount based on its ownership
+getBalanceAfterPaid = CreateCoreFunction "getBalance" GetBalance
+shareholders = CreateContract "ShareHolders" [Set ContractBal, Set Owner,
+  Set TotalShares, Set SharesOwned, Set Balances, withdrawFromDividends, payDividends, depositToContract, getBalanceAfterPaid]
 -- shareholders --
 
 -- pay interest to customers --
@@ -34,20 +38,28 @@ taxes = CreateContract "Taxes" [Set Owner, Set ContractBal, Set Balances, Set Ta
 
 -- richest game --
 richest = Recipient "richest"
-depositToContractBal = CreateFinancialFunction "deposit" Deposit All ContractBalance
-becomeRichest = Conditioned (RequireBetweenDates) (Conditioned (ValueGreaterThan (MessageValue) (ContractBal)) (CreateCoreFunction "becomeRichest" (BecomeRecipient (richest))))
+highestAmount = UnSignedAmount "highestAmount"
+depositToContractBal = Conditioned (RequireBetweenDates) (CreateFinancialFunction "deposit" Deposit All ContractBalance)
+becomeRichest = Conditioned (ValueGreaterThan (MessageValue) (highestAmount)) (Join "becomeRichest"
+  (CreateCoreFunction "becomeRichest" (BecomeRecipient (richest))) (CreateCoreFunction "updateHighestAmount" (Update (highestAmount) (MessageValue))))
 attemptToBecomeRichest = Join "attemptToBecomeRichest" depositToContractBal becomeRichest
-withdrawIfRichest = Conditioned (RequireEnded) (Conditioned (RequireRecipient richest) (CreateFinancialFunction "withdraw" Withdraw All ContractBalance))
-richestGame = CreateContract "RichestGame" [Set (RecipientAddress (richest)), Set ContractBal, Set StartTime, Set EndTime, attemptToBecomeRichest, withdrawIfRichest]
+withdrawIfRichest = Conditioned (RequireEnded) (Conditioned (RequireRecipient richest)
+  (CreateFinancialFunction "withdraw" Withdraw All ContractBalance))
+richestGame = CreateContract "RichestGame" [Set (RecipientAddress (richest)), Set ContractBal, Set StartTime,
+  Set EndTime, Set highestAmount, attemptToBecomeRichest, withdrawIfRichest]
 -- richest game --
 
 -- auction --
 winner = Recipient "winner"
 highestBid = UnSignedAmount "highestBid"
 newBid = UnSignedAmount "newBid"
-payIfWinner = Conditioned (RequireEnded) (Conditioned (RequireRecipient winner) ((Conditioned (EqualTo (highestBid) (MessageValue)) (CreateFinancialFunction "payIfWinner" Deposit All ContractBalance))))
+hasPaid = BooleanVariable "hasPaid"
+payIfWinner = Conditioned (RequireEnded) (Conditioned (RequireRecipient winner) ((Conditioned (EqualTo (highestBid) (MessageValue)) (Join "payIfWinner"
+  (CreateFinancialFunction "pay" Deposit All ContractBalance) (CreateCoreFunction "setPaid" (Update hasPaid BoolTrue))))))
 bid = Conditioned (RequireBetweenDates) (Conditioned (ValueGreaterThan (newBid) (highestBid)) (Join ("bid") (CreateCoreFunction "becomeWinner" (BecomeRecipient (winner))) (CreateCoreFunction "updateHighestBid" (Update (highestBid) (newBid)))))
-checkWinner = (CreateCoreFunction "checkWinner" (GetRecipient (winner)))
-ownerWithdrawAfterAuctionEnded = Conditioned (RequireEnded) (Conditioned (RequireOwner) (CreateFinancialFunction "withdraw" Withdraw All ContractBalance))
-auction = CreateContract "Auction" [Set (RecipientAddress (winner)), Set Owner, Set ContractBal, Set highestBid, Set StartTime, Set EndTime, ownerWithdrawAfterAuctionEnded, bid, payIfWinner, checkWinner]
+checkWinner = (CreateCoreFunction "checkWinner" (GetVariable (RecipientAddress winner)))
+ownerWithdrawAfterAuctionEnded = Conditioned (RequireEnded) (Conditioned (RequireOwner) (Conditioned (RequireTrue (hasPaid))
+  (CreateFinancialFunction "withdraw" Withdraw All ContractBalance)))
+auction = CreateContract "Auction" [Set (RecipientAddress (winner)), Set Owner, Set ContractBal, Set highestBid, Set hasPaid, Set StartTime, Set EndTime,
+  ownerWithdrawAfterAuctionEnded, bid, payIfWinner, checkWinner]
 -- auction --

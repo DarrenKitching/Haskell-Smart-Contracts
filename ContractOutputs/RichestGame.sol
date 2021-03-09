@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract RichestGame {
-	constructor (address payable _richest, uint _contractBalance, uint _start, uint _end) {
+	constructor (address payable _richest, uint _start, uint _end, uint _highestAmount) {
 		richest = _richest; 
-		contractBalance = _contractBalance; 
+		contractBalance = 0; 
 		start = _start; 
 		end = _end; 
+		highestAmount = _highestAmount; 
 	}
 	address payable public richest; 
 	uint public contractBalance; 
 	uint public start; 
 	uint public end; 
-	function attemptToBecomeRichest() public payable {
-		contractBalance += msg.value; 
+	uint public highestAmount; 
+	function attemptToBecomeRichest() payable public {
 		require(block.timestamp >= start && block.timestamp <= end); 
-		if (msg.value > contractBalance) {
+		contractBalance += msg.value; 
+		if (msg.value > highestAmount) {
 			richest = msg.sender; 
+			highestAmount = msg.value; 
 		}
 	}
 	function withdraw() public {
