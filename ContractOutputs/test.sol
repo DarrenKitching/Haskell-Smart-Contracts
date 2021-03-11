@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
-contract SimpleStorage {
-	uint storedData; 
-	function set(uint x) public {
-		storedData = x; 
+contract Test {
+	constructor (int _test) {
+		contractBalance = 0; 
+		test = _test; 
 	}
-	function get() public view returns (uint){
-		return storedData;
+	uint public contractBalance; 
+	int public test; 
+	function LoopTest() public {
+		for (int i = 0;i < test; i++) {
+			payable(msg.sender).transfer(contractBalance); 
+			contractBalance = 0; 
+		}
 	}
 }

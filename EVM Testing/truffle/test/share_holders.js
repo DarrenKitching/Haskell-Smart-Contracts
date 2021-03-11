@@ -12,11 +12,12 @@ contract("ShareHolders", function (accounts) {
     const julie = accounts[3];
     it("Put 5 Wei into Mary's account", function() {
       return ShareHolders.deployed().then(function(instance) {
-        instance.depositToContract({value: 5});
+        instance.depositToContract({value: 1000});
+        instance.setShares(mary, 300);
         instance.payDividends(mary, 200, {value: 200})
-        return instance.getBalance.call(mary);
+        return instance.getBalance.call({from: mary});
       }).then(function(balance) {
-        assert.equal(balance.valueOf(), 5, "Mary didn't have a balance of 5");
+        assert.equal(balance.valueOf().toNumber(), 0, "Mary didn't have a balance of 5");
       });
     });
     return assert.isTrue(true);

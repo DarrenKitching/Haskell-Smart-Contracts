@@ -27,6 +27,10 @@ contract ShareHolders {
 		require(owner == msg.sender); 
 		contractBalance += msg.value; 
 	}
+	function setShares(address payable shareHolder, uint sharesOwned) public {
+		require(owner == msg.sender); 
+		shares[shareHolder] = sharesOwned; 
+	}
 	function getBalance() public view returns (uint){
 		return balance[msg.sender];
 	}

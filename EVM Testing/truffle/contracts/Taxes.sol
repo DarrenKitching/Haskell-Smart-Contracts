@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
-contract Bank {
-	constructor () {
+contract Taxes {
+	constructor (uint _taxRate) {
 		owner = msg.sender; 
+		contractBalance = 0; 
+		taxRate = _taxRate; 
 	}
-	mapping (address => uint) balance; 
 	address payable public owner; 
-	function withdraw(uint amount) public {
+	uint public contractBalance; 
+	mapping (address => uint) balance; 
+	uint public taxRate; 
+	function customerWithdrawal(uint amount) public {
 		require(balance[msg.sender] >= amount); 
 		balance[msg.sender] -= amount; 
 		payable(msg.sender).transfer(amount); 
 	}
-	function deposit() public payable {
+	function customerDeposit() public payable {
 		balance[msg.sender] += msg.value; 
 	}
-	function transfer(address payable _to, uint amount) public payable {
+	function payTaxes(address payable _to, uint amount) public payable {
+		amount = balance[_to] * taxRate; 
 		require(balance[msg.sender] >= amount); 
 		balance[msg.sender] -= amount; 
 		balance[_to] += amount; 
-	}
-	function getBalance() public view returns (uint){
-		return balance[msg.sender];
 	}
 }

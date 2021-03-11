@@ -10,14 +10,14 @@ createIdentifier (x:xs) = Identifier x xs
 createIdentifierExpression :: String -> Expression
 createIdentifierExpression (xs) = IdentifierExpr $ (createIdentifier xs)
 
-createPragma :: String -> Contract -> Contract -- use a string and other top level components to create top level pragma
+createPragma :: String -> Solidity -> Solidity -- use a string and other top level components to create top level pragma
 createPragma (x:xs) contract = Pragma (PragmaToken x) (createPragmaTokenList xs) contract
 
 createPragmaTokenList :: String -> [PragmaToken]
 createPragmaTokenList "" = []
 createPragmaTokenList (x:xs) = (PragmaToken x) : (createPragmaTokenList xs)
 
-defineContract :: String -> [ContractBodyElement] -> Contract -> Contract
+defineContract :: String -> [ContractBodyElement] -> Solidity -> Solidity
 defineContract name elements contract = ContractDef (ContractDefinition (Nothing) (createIdentifier name) (Nothing) elements) contract
 
 stateAddressDeclaration :: String -> [StateVariableModifiers] -> StateVariableDeclaration

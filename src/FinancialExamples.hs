@@ -2,50 +2,53 @@ module FinancialExamples where
 import FinancialContracts
 
 -- bank --
-withdrawFromBalance = CreateFinancialFunction "withdraw" Withdraw SpecificAmount UserBalance
-depositFromBalance = CreateFinancialFunction "deposit" Deposit All UserBalance
-transferFromBalance = CreateFinancialFunction "transfer" Transfer SpecificAmount UserBalance
-getBal = CreateCoreFunction "getBalance" GetBalance
-bank = CreateContract "Bank" [Set Balances, Set Owner,
+withdrawFromBalance = FunctionElement "withdraw" (Financial Withdraw SpecificAmount UserBalance)
+depositFromBalance = FunctionElement "deposit" (Financial Deposit All UserBalance)
+transferFromBalance = FunctionElement "transfer" (Financial Transfer SpecificAmount UserBalance)
+getBal = FunctionElement "getBalance" (Core GetBalance)
+bank = Contract "Bank" [Set Balances, Set Owner,
   withdrawFromBalance, depositFromBalance, transferFromBalance, getBal]
 -- bank --
 
 -- shareholders --
-withdrawFromDividends = CreateFinancialFunction "withdraw" Withdraw All UserBalance -- allows user to withdraw all of their dividends that has accumulated
-depositToContract = Conditioned (RequireOwner) (CreateFinancialFunction "depositToContract" Deposit All ContractBalance) -- contract owner (company) can deposit to the contract
-payDividends = Conditioned (RequireOwner) (ProportionalTo (Shares)
-  (CreateFinancialFunction "payDividends" Transfer SpecificAmount ContractBalance)) -- the owner can pay shares to an address and it will be assigned an amount based on its ownership
-getBalanceAfterPaid = CreateCoreFunction "getBalance" GetBalance
-shareholders = CreateContract "ShareHolders" [Set ContractBal, Set Owner,
-  Set TotalShares, Set SharesOwned, Set Balances, withdrawFromDividends, payDividends, depositToContract, getBalanceAfterPaid]
+shareHolder = Recipient "shareHolder"
+numberOfShares = UnSignedAmount "sharesOwned"
+withdrawFromDividends = FunctionElement "withdraw" (Financial Withdraw All UserBalance) -- allows user to withdraw all of their dividends that has accumulated
+depositToContract = FunctionElement "depositToContract" (Conditioned (RequireOwner) (Financial Deposit All ContractBalance)) -- contract owner (company) can deposit to the contract
+payDividends = FunctionElement "payDividends" (Conditioned (RequireOwner) (ProportionalTo (SignedAmount "amount") (Shares)
+  (Financial Transfer SpecificAmount ContractBalance))) -- the owner can pay shares to an address and it will be assigned an amount based on its ownership
+getBalanceAfterPaid = FunctionElement "getBalance" (Core GetBalance)
+setSharesOwned = FunctionElement "setShares" (Conditioned (RequireOwner) (Core (Update (IndexAddress SharesOwned shareHolder) (numberOfShares) [RecipientAddress shareHolder, numberOfShares])))
+shareholders = Contract "ShareHolders" [Set ContractBal, Set Owner,
+  Set TotalShares, Set SharesOwned, Set Balances, withdrawFromDividends, payDividends, depositToContract, setSharesOwned, getBalanceAfterPaid]
 -- shareholders --
 
 -- pay interest to customers --
-customerWithdrawal = CreateFinancialFunction "customerWithdrawal" Withdraw SpecificAmount UserBalance
-customerDeposit = CreateFinancialFunction "customerDeposit" Deposit All UserBalance
-payInterest = ProportionalTo InterestRate (CreateFinancialFunction "payInterest" Transfer SpecificAmount ContractBalance)
-payInterestLessDIRT = ProportionalTo InterestRateLessDIRT (CreateFinancialFunction "payInterestLessDIRT" Transfer SpecificAmount ContractBalance)
-transferOwnership = CreateCoreFunction "giveOwnership" GiveOwnership
-interest = CreateContract "Interest" [Set Owner, Set ContractBal, Set Balances, Set Interest, Set DIRT, customerWithdrawal, customerDeposit, payInterest, payInterestLessDIRT, transferOwnership]
+customerWithdrawal = FunctionElement "customerWithdrawal" (Financial Withdraw SpecificAmount UserBalance)
+customerDeposit = FunctionElement "customerDeposit" (Financial Deposit All UserBalance)
+payInterest = FunctionElement "payInterest" (ProportionalTo (SignedAmount "amount") InterestRate (Financial Transfer SpecificAmount ContractBalance))
+payInterestLessDIRT = FunctionElement "payInterestLessDIRT" (ProportionalTo (SignedAmount "amount") InterestRateLessDIRT (Financial Transfer SpecificAmount ContractBalance))
+transferOwnership = FunctionElement "giveOwnership" (Core GiveOwnership)
+interest = Contract "Interest" [Set Owner, Set ContractBal, Set Balances, Set Interest, Set DIRT, customerWithdrawal, customerDeposit, payInterest, payInterestLessDIRT, transferOwnership]
 -- pay intereset to customers --
 
 -- collect taxes --
-withdraw = CreateFinancialFunction "customerWithdrawal" Withdraw SpecificAmount UserBalance
-deposit = CreateFinancialFunction "customerDeposit" Deposit All UserBalance
-collectTaxes = ProportionalTo TaxRate (CreateFinancialFunction "payTaxes" Transfer SpecificAmount UserBalance)
-taxes = CreateContract "Taxes" [Set Owner, Set ContractBal, Set Balances, Set Tax, withdraw, deposit, collectTaxes]
+withdraw = FunctionElement "customerWithdrawal" (Financial Withdraw SpecificAmount UserBalance)
+deposit = FunctionElement "customerDeposit" (Financial Deposit All UserBalance)
+collectTaxes = FunctionElement "payTaxes" (ProportionalTo (SignedAmount "amount") TaxRate (Financial Transfer SpecificAmount UserBalance))
+taxes = Contract "Taxes" [Set Owner, Set ContractBal, Set Balances, Set Tax, withdraw, deposit, collectTaxes]
 -- collect taxes --
 
 -- richest game --
 richest = Recipient "richest"
 highestAmount = UnSignedAmount "highestAmount"
-depositToContractBal = Conditioned (RequireBetweenDates) (CreateFinancialFunction "deposit" Deposit All ContractBalance)
-becomeRichest = Conditioned (ValueGreaterThan (MessageValue) (highestAmount)) (Join "becomeRichest"
-  (CreateCoreFunction "becomeRichest" (BecomeRecipient (richest))) (CreateCoreFunction "updateHighestAmount" (Update (highestAmount) (MessageValue))))
-attemptToBecomeRichest = Join "attemptToBecomeRichest" depositToContractBal becomeRichest
-withdrawIfRichest = Conditioned (RequireEnded) (Conditioned (RequireRecipient richest)
-  (CreateFinancialFunction "withdraw" Withdraw All ContractBalance))
-richestGame = CreateContract "RichestGame" [Set (RecipientAddress (richest)), Set ContractBal, Set StartTime,
+depositToContractBal =Conditioned (RequireTime BetweenStartAndEnd) (Financial Deposit All ContractBalance)
+becomeRichest = Conditioned (RequireVariableRelation ValueGreaterThan MessageValue highestAmount) (Join
+  (Core (BecomeRecipient (richest))) (Core (Update (highestAmount) (MessageValue) [])))
+attemptToBecomeRichest = FunctionElement "attemptToBecomeRichest" (Join depositToContractBal becomeRichest)
+withdrawIfRichest = FunctionElement "withdraw" (Conditioned (RequireTime Ended) (Conditioned (RequireRecipient richest)
+  (Financial Withdraw All ContractBalance)))
+richestGame = Contract "RichestGame" [Set (RecipientAddress (richest)), Set ContractBal, Set StartTime,
   Set EndTime, Set highestAmount, attemptToBecomeRichest, withdrawIfRichest]
 -- richest game --
 
@@ -54,12 +57,18 @@ winner = Recipient "winner"
 highestBid = UnSignedAmount "highestBid"
 newBid = UnSignedAmount "newBid"
 hasPaid = BooleanVariable "hasPaid"
-payIfWinner = Conditioned (RequireEnded) (Conditioned (RequireRecipient winner) ((Conditioned (EqualTo (highestBid) (MessageValue)) (Join "payIfWinner"
-  (CreateFinancialFunction "pay" Deposit All ContractBalance) (CreateCoreFunction "setPaid" (Update hasPaid BoolTrue))))))
-bid = Conditioned (RequireBetweenDates) (Conditioned (ValueGreaterThan (newBid) (highestBid)) (Join ("bid") (CreateCoreFunction "becomeWinner" (BecomeRecipient (winner))) (CreateCoreFunction "updateHighestBid" (Update (highestBid) (newBid)))))
-checkWinner = (CreateCoreFunction "checkWinner" (GetVariable (RecipientAddress winner)))
-ownerWithdrawAfterAuctionEnded = Conditioned (RequireEnded) (Conditioned (RequireOwner) (Conditioned (RequireTrue (hasPaid))
-  (CreateFinancialFunction "withdraw" Withdraw All ContractBalance)))
-auction = CreateContract "Auction" [Set (RecipientAddress (winner)), Set Owner, Set ContractBal, Set highestBid, Set hasPaid, Set StartTime, Set EndTime,
+payIfWinner = FunctionElement "payIfWinner" (Conditioned (RequireTime Ended) (Conditioned (RequireRecipient winner) ((Conditioned (RequireVariableRelation ValueEqualTo (highestBid) (MessageValue)) (Join
+  (Financial Deposit All ContractBalance) (Core (Update hasPaid BoolTrue [])))))))
+bid = FunctionElement "bid" (Conditioned (RequireTime BetweenStartAndEnd) (Conditioned (RequireVariableRelation ValueGreaterThan newBid highestBid) (Join (Core (BecomeRecipient (winner))) (Core (Update (highestBid) (newBid) [newBid])))))
+checkWinner = FunctionElement "checkWinner" (Core (GetVariable (RecipientAddress winner)))
+ownerWithdrawAfterAuctionEnded = FunctionElement "withdraw" (Conditioned (RequireTime Ended) (Conditioned (RequireOwner) (Conditioned (RequireTrue (hasPaid))
+  (Financial Withdraw All ContractBalance))))
+auction = Contract "Auction" [Set (RecipientAddress (winner)), Set Owner, Set ContractBal, Set highestBid, Set hasPaid, Set StartTime, Set EndTime,
   ownerWithdrawAfterAuctionEnded, bid, payIfWinner, checkWinner]
 -- auction --
+
+-- test --
+testTimes = SignedAmount "test"
+wac = FunctionElement "LoopTest" (Loop (testTimes) (Financial Withdraw All ContractBalance))
+test = Contract "Test" [Set ContractBal, Set testTimes, wac]
+-- test --

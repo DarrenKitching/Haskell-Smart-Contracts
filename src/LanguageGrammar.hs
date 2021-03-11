@@ -3,16 +3,16 @@ import YulLanguageGrammar
 
 -- This module contains a representation of the Solidity Language Grammar in Haskell
 
-data Contract = EOF
-              | Pragma PragmaToken [PragmaToken] Contract
-              | ImportDir ImportDirective Contract
-              | ContractDef ContractDefinition Contract
-              | InterfaceDef InterfaceDefinition Contract
-              | LibraryDef LibraryDefinition Contract
-              | FunctionDef FunctionDefinition Contract
-              | ConstVariableDec ConstantVariableDeclaration Contract
-              | StructDef StructDefinition Contract
-              | EnumDef EnumDefinition Contract
+data Solidity = EOF
+              | Pragma PragmaToken [PragmaToken] Solidity
+              | ImportDir ImportDirective Solidity
+              | ContractDef ContractDefinition Solidity
+              | InterfaceDef InterfaceDefinition Solidity
+              | LibraryDef LibraryDefinition Solidity
+              | FunctionDef FunctionDefinition Solidity
+              | ConstVariableDec ConstantVariableDeclaration Solidity
+              | StructDef StructDefinition Solidity
+              | EnumDef EnumDefinition Solidity
 
 data PragmaToken = PragmaToken Char
 

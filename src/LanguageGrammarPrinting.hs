@@ -8,7 +8,7 @@ import YulLanguageGrammarPrinting
 duplicate :: String -> Int -> String
 duplicate string n = concat $ replicate n string
 
-printSolidity :: Contract -> String
+printSolidity :: Solidity -> String
 printSolidity (EOF) = ""
 printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token)
   ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
