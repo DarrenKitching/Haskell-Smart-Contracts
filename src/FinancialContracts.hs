@@ -11,7 +11,7 @@ data ContractElement = Set Variable
 
 data Function = Financial FinancialFunctionality Amount Source
               | Core CoreFunctionality
-              | ProportionalTo Variable Rate Function
+              | ProportionalTo Variable Variable Rate Function
               | Loop Variable Function
               | Conditioned Condition Function
               | Join Function Function
@@ -27,7 +27,7 @@ data VariableRelation = ValueGreaterThan | ValueLessThan | ValueGreaterThanEqual
 
 data Variable = Owner | ContractBal | StartTime | EndTime | RecipientAddress Recipient | Balances | Addresses String
               | IndexAddress Variable Recipient | SignedAmount String | UnSignedAmount String | BooleanVariable String | Interest | Tax | DIRT
-              | SharesOwned | TotalShares | MessageValue | BoolTrue | BoolFalse
+              | SharesOwned | TotalShares | MessageValue | BoolTrue | BoolFalse | Random Int
 
 data CoreFunctionality = GiveOwnership | GetBalance | GetVariable Variable | BecomeRecipient Recipient | Update Variable Variable [Variable]
 
@@ -91,7 +91,7 @@ convertFunctionToSolidity name (Core GetBalance) = (getBalance name)
 convertFunctionToSolidity name (Core (BecomeRecipient (recipient))) = (becomeRecipient name recipient)
 convertFunctionToSolidity name (Core (GetVariable (variable))) = (getVariable name variable)
 convertFunctionToSolidity name (Core (Update (var1) (var2) params)) = (updateElement name var1 var2 params)
-convertFunctionToSolidity name (ProportionalTo var rate func) = proportionalTo var rate (convertFunctionToSolidity name func)
+convertFunctionToSolidity name (ProportionalTo var1 var2 rate func) = proportionalTo var1 var2 rate (convertFunctionToSolidity name func)
 convertFunctionToSolidity name (Loop var contractElement) = loop var (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireOwner) contractElement) = ifOwner (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireTime Started) contractElement) = ifAfterStart (convertFunctionToSolidity name contractElement)
@@ -243,10 +243,12 @@ loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Not
 
 contractBalanceAssignment = expressionToStatement $ Equals (createIdentifierExpression "contractBalance") (createIdentifierExpression "0")
 ownerAssignment = expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")
+endAssignment = expressionToStatement $ Equals (createIdentifierExpression "end") (createIdentifierExpression "start + hoursAfter * 1 hours")
 
 buildConstructor :: [ContractBodyElement] -> ContractBodyElement
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (Identifier 'o' ['w', 'n', 'e', 'r']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [ownerAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'c' ['o', 'n', 't', 'r', 'a', 'c', 't', 'B', 'a', 'l', 'a', 'n', 'c', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [contractBalanceAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'e' ['n', 'd']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "hoursAfter")]) (Nothing) (createBlock [endAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType varType) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(varType, (['_'] ++ y:ys))]) (Nothing) (createBlock [(expressionToStatement $ Equals (createIdentifierExpression (y:ys)) (createIdentifierExpression (['_'] ++[y] ++ ys)))]))) (buildConstructor xs)
 buildConstructor (_:xs) = buildConstructor xs
 buildConstructor [] = ConstructElem (Constructor (Nothing) (Nothing) (createBlock []))
@@ -279,11 +281,14 @@ updateElement name var1 var2 params = FunctionElem $ FunctionaDefinition (Identi
 becomeRecipient :: String -> Recipient -> ContractBodyElement
 becomeRecipient functionName (Recipient name) = FunctionElem $ FunctionaDefinition (IdentifierName (createIdentifier (functionName))) (Nothing) [VisibilityModifier PublicVisibility] (Nothing) (Just $ createBlock [(expressionToStatement $ Equals (createIdentifierExpression name) (createIdentifierExpression "msg.sender"))])
 
-proportionalTo :: Variable -> Rate -> ContractBodyElement -> ContractBodyElement
-proportionalTo var (Shares) x = addRequirement x (expressionToStatement $ DivEquals (createIdentifierExpression (getVariableName var)) (Div (Index (createIdentifierExpression "shares") (createIdentifierExpression "_to")) (createIdentifierExpression "totalShares")))
-proportionalTo var (InterestRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var)) (Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "interestRate")))
-proportionalTo var (TaxRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var)) (Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "taxRate")))
-proportionalTo var (InterestRateLessDIRT) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var)) (Mul ((Mul (Index (createIdentifierExpression "balance") (createIdentifierExpression "_to")) (createIdentifierExpression "interestRate"))) (Sub (createIdentifierExpression "(1") (createIdentifierExpression "DIRT)")))  )
+proportionalTo :: Variable -> Variable -> Rate -> ContractBodyElement -> ContractBodyElement
+proportionalTo var1 var2 (Shares) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (Div (Mul (createIdentifierExpression $ getVariableName var1) (createIdentifierExpression $ getVariableName var2)) (createIdentifierExpression "totalShares")))
+proportionalTo var1 var2 (InterestRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (Div (Mul (createIdentifierExpression $  getVariableName var2) (createIdentifierExpression "interestRate")) (createIdentifierExpression "100")))
+proportionalTo var1 var2 (TaxRate) x = addRequirement x (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (Div (Mul (createIdentifierExpression $  getVariableName var2) (createIdentifierExpression "taxRate")) (createIdentifierExpression "100")))
+proportionalTo var1 var2 (InterestRateLessDIRT) x = addRequirement (addRequirement x (removeDIRT var1 var2)) (expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (Div ((Mul (createIdentifierExpression $ getVariableName var2) (createIdentifierExpression "interestRate"))) (createIdentifierExpression "100")))
+
+removeDIRT :: Variable -> Variable -> Statement
+removeDIRT var1 var2 = expressionToStatement $ Equals (createIdentifierExpression (getVariableName var1)) (Div (Mul (createIdentifierExpression (getVariableName var1)) (Sub (createIdentifierExpression "(100") (createIdentifierExpression "DIRT)"))) (createIdentifierExpression "100"))
 
 join :: String -> ContractBodyElement -> ContractBodyElement -> ContractBodyElement
 join newName (FunctionElem (FunctionaDefinition name1 (params1) modifiers1 (Nothing) (Just block1))) (FunctionElem (FunctionaDefinition name2 (params2) modifiers2 (Nothing) (Just block2))) = (FunctionElem (FunctionaDefinition (IdentifierName $ createIdentifier newName) (joinParamLists params1 params2) (removeDuplicateVisibility $ joinModifiers modifiers1 modifiers2) (Nothing) (Just (joinBlocks block1 block2))))
@@ -316,6 +321,7 @@ getVariableName TotalShares = "totalShares"
 getVariableName MessageValue = "msg.value"
 getVariableName BoolTrue = "true"
 getVariableName BoolFalse = "false"
+getVariableName (Random num) = "uint(uint256(keccak256(block.timestamp, block.difficulty))%" ++ (show num) ++ ")"
 
 getType :: Variable -> TypeName
 getType Owner = ElementaryType uint
@@ -336,3 +342,4 @@ getType SharesOwned = Mapping $ createMappingFromType address (ElementaryType ui
 getType TotalShares = ElementaryType uint
 getType BoolTrue = ElementaryType $ Bool
 getType BoolFalse = ElementaryType $ Bool
+getType (Random _) = ElementaryType $ uint

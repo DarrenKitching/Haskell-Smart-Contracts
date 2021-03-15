@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract RichestGame {
-	constructor (address payable _richest, uint _start, uint _end, uint _highestAmount) {
+	constructor (address payable _richest, uint _start, uint hoursAfter, uint _highestAmount) {
 		richest = _richest; 
 		contractBalance = 0; 
 		start = _start; 
-		end = _end; 
+		end = start + hoursAfter * 1 hours; 
 		highestAmount = _highestAmount; 
 	}
 	address payable public richest; 
@@ -26,5 +26,8 @@ contract RichestGame {
 		require(richest == msg.sender); 
 		payable(msg.sender).transfer(contractBalance); 
 		contractBalance = 0; 
+	}
+	function checkRichest() public view returns (address payable){
+		return richest;
 	}
 }

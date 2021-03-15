@@ -18,7 +18,7 @@ contract ShareHolders {
 	}
 	function payDividends(address payable _to, uint amount) public payable {
 		require(owner == msg.sender); 
-		amount /= shares[_to] / totalShares; 
+		amount = amount * shares[_to] / totalShares; 
 		require(contractBalance >= amount); 
 		contractBalance -= amount; 
 		balance[_to] += amount; 

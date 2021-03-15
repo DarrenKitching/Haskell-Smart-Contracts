@@ -19,9 +19,12 @@ contract Taxes {
 		balance[msg.sender] += msg.value; 
 	}
 	function payTaxes(address payable _to, uint amount) public payable {
-		amount = balance[_to] * taxRate; 
+		amount = balance[msg.sender] * taxRate / 100; 
 		require(balance[msg.sender] >= amount); 
 		balance[msg.sender] -= amount; 
 		balance[_to] += amount; 
+	}
+	function getBalance() public view returns (uint){
+		return balance[msg.sender];
 	}
 }

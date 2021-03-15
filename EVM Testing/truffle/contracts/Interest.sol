@@ -21,13 +21,14 @@ contract Interest {
 		balance[msg.sender] += msg.value; 
 	}
 	function payInterest(address payable _to, uint amount) public payable {
-		amount = balance[_to] * interestRate; 
+		amount = balance[_to] * interestRate / 100; 
 		require(contractBalance >= amount); 
 		contractBalance -= amount; 
 		balance[_to] += amount; 
 	}
 	function payInterestLessDIRT(address payable _to, uint amount) public payable {
-		amount = balance[_to] * interestRate * (1 - DIRT); 
+		amount = balance[_to] * interestRate / 100; 
+		amount = amount * (100 - DIRT) / 100; 
 		require(contractBalance >= amount); 
 		contractBalance -= amount; 
 		balance[_to] += amount; 
@@ -35,5 +36,12 @@ contract Interest {
 	function giveOwnership(address payable newOwner) public {
 		require(owner == msg.sender); 
 		owner = newOwner; 
+	}
+	function getBalance() public view returns (uint){
+		return balance[msg.sender];
+	}
+	function depositToContract() public payable {
+		require(owner == msg.sender); 
+		contractBalance += msg.value; 
 	}
 }

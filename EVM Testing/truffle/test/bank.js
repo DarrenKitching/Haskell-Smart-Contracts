@@ -14,7 +14,7 @@ contract("Bank", function (accounts) {
     it("Put 5 Wei into Mary's account", function() {
       return Bank.deployed().then(function(instance) {
         instance.deposit({from: mary, value: 5});
-        return instance.getBalance.call(mary);
+        return instance.getBalance.call({from: mary});
       }).then(function(balance) {
         assert.equal(balance.valueOf(), 5, "Mary didn't have a balance of 5");
       });
@@ -23,7 +23,7 @@ contract("Bank", function (accounts) {
       return Bank.deployed().then(function(instance) {
         instance.deposit({from: joe, value: 10});
         instance.withdraw(7, {from: joe});
-        return instance.getBalance.call(joe);
+        return instance.getBalance.call({from: joe});
       }).then(function(balance) {
         assert.equal(balance.valueOf(), 3, "Joe didn't have a balance of 3");
       });
@@ -32,7 +32,8 @@ contract("Bank", function (accounts) {
       return Bank.deployed().then(function(instance) {
         instance.deposit({from: bill, value: 15});
         instance.transfer(julie, 5, {from: bill});
-        return instance.getBalance.call(bill);
+        //return instance.getBalance.call({from: bill});
+        return instance.getBalance.call({from: bill});
       }).then(function(balance) {
         assert.equal(balance.valueOf(), 10, "Bill didn't have a balance of 10");
       });
