@@ -7,9 +7,9 @@ const Bank = artifacts.require("Bank");
  */
 contract("Bank", function (accounts) {
     console.log("Accounts visible: ", accounts);
-    const mary = accounts[0]; // mary wants to deposit 5 Wei
-    const joe = accounts[1]; // joe wants to deposit 10 Wei and then withdrwas 7 Wei
-    const bill = accounts[2]; // bill wants to transfer 3 Wei from his account to Mary's
+    const mary = accounts[0];         // mary wants to deposit 5 Wei
+    const joe = accounts[1];          // joe wants to deposit 10 Wei and then withdrwas 7 Wei
+    const bill = accounts[2];         // bill wants to transfer 3 Wei from his account to Mary's
     const julie = accounts[3];
     it("Put 5 Wei into Mary's account", function() {
       return Bank.deployed().then(function(instance) {

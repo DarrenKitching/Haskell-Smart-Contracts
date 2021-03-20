@@ -15,10 +15,12 @@ shareHolder = Recipient "shareHolder"
 numberOfShares = UnSignedAmount "sharesOwned"
 withdrawFromDividends = FunctionElement "withdraw" (Financial Withdraw All UserBalance) -- allows user to withdraw all of their dividends that has accumulated
 depositToContract = FunctionElement "depositToContract" (Conditioned (RequireOwner) (Financial Deposit All ContractBalance)) -- contract owner (company) can deposit to the contract
-payDividends = FunctionElement "payDividends" (Conditioned (RequireOwner) (ProportionalTo (SignedAmount "amount") (IndexAddress (SharesOwned) (Recipient "_to")) (Shares)
+payDividends = FunctionElement "payDividends" (Conditioned (RequireOwner) (ProportionalTo (SignedAmount "amount")
+  (IndexAddresses (SharesOwned) (Recipient "_to")) (Shares)
   (Financial Transfer SpecificAmount ContractBalance))) -- the owner can pay shares to an address and it will be assigned an amount based on its ownership
 getBalanceAfterPaid = FunctionElement "getBalance" (Core GetBalance)
-setSharesOwned = FunctionElement "setShares" (Conditioned (RequireOwner) (Core (Update (IndexAddress SharesOwned shareHolder) (numberOfShares) [RecipientAddress shareHolder, numberOfShares])))
+setSharesOwned = FunctionElement "setShares" (Conditioned (RequireOwner) (Core (Update (IndexAddresses SharesOwned shareHolder)
+  (numberOfShares) [RecipientAddress shareHolder, numberOfShares])))
 shareholders = Contract "ShareHolders" [Set ContractBal, Set Owner,
   Set TotalShares, Set SharesOwned, Set Balances, withdrawFromDividends, payDividends, depositToContract, setSharesOwned, getBalanceAfterPaid]
 -- shareholders --
@@ -27,16 +29,20 @@ shareholders = Contract "ShareHolders" [Set ContractBal, Set Owner,
 customerWithdrawal = FunctionElement "customerWithdrawal" (Financial Withdraw SpecificAmount UserBalance)
 customerDeposit = FunctionElement "customerDeposit" (Financial Deposit All UserBalance)
 bankDepositToContract = FunctionElement "depositToContract" (Conditioned (RequireOwner) (Financial Deposit All ContractBalance))
-payInterest = FunctionElement "payInterest" (ProportionalTo (SignedAmount "amount") (IndexAddress (Balances) (Recipient "_to")) InterestRate (Financial Transfer SpecificAmount ContractBalance))
-payInterestLessDIRT = FunctionElement "payInterestLessDIRT" (ProportionalTo (SignedAmount "amount") (IndexAddress (Balances) (Recipient "_to")) InterestRateLessDIRT (Financial Transfer SpecificAmount ContractBalance))
+payInterest = FunctionElement "payInterest" (ProportionalTo (SignedAmount "amount") (IndexAddresses (Balances) (Recipient "_to")) InterestRate
+  (Financial Transfer SpecificAmount ContractBalance))
+payInterestLessDIRT = FunctionElement "payInterestLessDIRT" (ProportionalTo (SignedAmount "amount") (IndexAddresses (Balances)
+  (Recipient "_to")) InterestRateLessDIRT (Financial Transfer SpecificAmount ContractBalance))
 transferOwnership = FunctionElement "giveOwnership" (Core GiveOwnership)
-interest = Contract "Interest" [Set Owner, Set ContractBal, Set Balances, Set Interest, Set DIRT, customerWithdrawal, customerDeposit, payInterest, payInterestLessDIRT, transferOwnership, getBal, bankDepositToContract]
+interest = Contract "Interest" [Set Owner, Set ContractBal, Set Balances, Set Interest, Set DIRT,
+  customerWithdrawal, customerDeposit, payInterest, payInterestLessDIRT, transferOwnership, getBal, bankDepositToContract]
 -- pay intereset to customers --
 
 -- collect taxes --
 withdraw = FunctionElement "customerWithdrawal" (Financial Withdraw SpecificAmount UserBalance)
 deposit = FunctionElement "customerDeposit" (Financial Deposit All UserBalance)
-payTaxes = FunctionElement "payTaxes" (ProportionalTo (SignedAmount "amount") (IndexAddress (Balances) (Recipient "msg.sender")) TaxRate (Financial Transfer SpecificAmount UserBalance))
+payTaxes = FunctionElement "payTaxes" (ProportionalTo (SignedAmount "amount") (IndexAddresses (Balances) (Recipient "msg.sender"))
+  TaxRate (Financial Transfer SpecificAmount UserBalance))
 taxes = Contract "Taxes" [Set Owner, Set ContractBal, Set Balances, Set Tax, withdraw, deposit, payTaxes, getBal]
 -- collect taxes --
 
@@ -74,11 +80,18 @@ auction = Contract "Auction" [Set (RecipientAddress (winner)), Set Owner, Set Co
 -- auction --
 
 -- Lotto --
--- lottoWinner = Recipient "winner"
--- lottoPlayers = Addresses "players"
--- ticketPrice = UnSignedAmount "ticketPrice"
---
--- buyTicket = FunctionElement "buyTicket" (Financial Deposit SpecificAmount ContractBalance)
---
--- lotto = Contract "Lotto" [Set (RecipientAddress (lottoWinner)), Set lottoPlayers, Set ticketPrice, buyTicket]
+lottoWinner = Recipient "winner"
+lottoPlayers = AddressList "players"
+ticketPrice = UnSignedAmount "ticketPrice"
+numberOfPlayers = UnSignedAmount "numberOfPlayers"
+buyTicket = FunctionElement "buyTicket" (Conditioned (RequireVariableRelation ValueEqualTo (MessageValue) (ticketPrice))
+  (Join (Financial Deposit SpecificAmount ContractBalance) (Join (updatePlayersList) (updateNumberOfPlayers))))
+updatePlayersList = (Core (Update (IndexAddressList (lottoPlayers) (numberOfPlayers)) (MessageSender) []))
+updateNumberOfPlayers = (Core (Update (numberOfPlayers) (Increment (numberOfPlayers) (1)) []))
+withdrawIfWinner = FunctionElement "withdraw" ((Conditioned (RequireRecipient lottoWinner) (Financial Withdraw All ContractBalance)))
+pickWinner = FunctionElement "pickWinner" (Conditioned (RequireNotZero numberOfPlayers) ((Conditioned (RequireOwner)
+  (Core (Update (RecipientAddress lottoWinner) (IndexAddressList (lottoPlayers) (Random numberOfPlayers)) [])))))
+checkLottoWinner = FunctionElement "checkWinner" (Core (GetVariable (RecipientAddress lottoWinner)))
+lotto = Contract "Lotto" [Set (RecipientAddress (lottoWinner)),
+  Set numberOfPlayers, Set lottoPlayers, Set ticketPrice, Set ContractBal, Set Owner, buyTicket, pickWinner, withdrawIfWinner, checkLottoWinner]
 -- Lotto --

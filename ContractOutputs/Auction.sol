@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract Auction {
-	constructor (address payable _winner, uint _highestBid, bool _hasPaid, uint _start, uint hoursAfter) {
+	constructor (address payable _winner, uint _highestBid, bool _hasPaid, uint hoursAfter) {
 		winner = _winner; 
 		owner = msg.sender; 
 		contractBalance = 0; 
 		highestBid = _highestBid; 
 		hasPaid = _hasPaid; 
-		start = _start; 
+		start = block.timestamp; 
 		end = start + hoursAfter * 1 hours; 
 	}
 	address payable public winner; 

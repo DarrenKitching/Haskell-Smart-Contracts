@@ -21,7 +21,7 @@ main = do
   outputContract taxes "ContractOutputs/Taxes.sol"
   outputContract richestGame "ContractOutputs/RichestGame.sol"
   outputContract auction "ContractOutputs/Auction.sol"
-  -- outputContract lotto "ContractOutputs/Lotto.sol"
+  outputContract lotto "ContractOutputs/Lotto.sol"
 
 outputSolidityContract :: Solidity -> String -> IO ()
 outputSolidityContract contract destination = do

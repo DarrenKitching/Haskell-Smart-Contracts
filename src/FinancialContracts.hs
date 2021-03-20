@@ -18,16 +18,17 @@ data Function = Financial FinancialFunctionality Amount Source
 
 data Recipient = Recipient String
 
-data Condition = RequireOwner | RequireTime TimeRequirement | RequireRecipient Recipient
-               | RequireTrue Variable | RequireFalse Variable | RequireVariableRelation VariableRelation Variable Variable
+data Condition = RequireOwner | RequireTime TimeRequirement | RequireRecipient Recipient | RequireNotZero Variable
+               |  Variable | RequireTrue Variable | RequireFalse Variable | RequireVariableRelation VariableRelation Variable Variable
 
 data TimeRequirement = Started | NotStarted | Ended | NotEnded | BetweenStartAndEnd
 
 data VariableRelation = ValueGreaterThan | ValueLessThan | ValueGreaterThanEqualTo | ValueLessThanEqualTo | ValueEqualTo | ValueNotEqualTo
 
-data Variable = Owner | ContractBal | StartTime | EndTime | RecipientAddress Recipient | Balances | Addresses String
-              | IndexAddress Variable Recipient | SignedAmount String | UnSignedAmount String | BooleanVariable String | Interest | Tax | DIRT
-              | SharesOwned | TotalShares | MessageValue | BoolTrue | BoolFalse | Random Int
+data Variable = Owner | ContractBal | StartTime | EndTime | RecipientAddress Recipient | Balances | Addresses String | MessageSender
+              | IndexAddresses Variable Recipient | SignedAmount String | UnSignedAmount String | BooleanVariable String | Interest | Tax | DIRT
+              | SharesOwned | TotalShares | MessageValue | BoolTrue | BoolFalse | Random Variable | AddressList String | IndexAddressList Variable Variable
+              | Increment Variable Int | Decrement Variable Int
 
 data CoreFunctionality = GiveOwnership | GetBalance | GetVariable Variable | BecomeRecipient Recipient | Update Variable Variable [Variable]
 
@@ -48,6 +49,14 @@ outputContract (Contract name elements) destination = do
 convertToSolidity :: [ContractElement] -> [ContractBodyElement]
 convertToSolidity [] = []
 convertToSolidity ((Set (MessageValue)):xs) = (convertToSolidity xs) -- special case, MessageValue cannot be set like other variables
+convertToSolidity ((Set (MessageSender)):xs) = (convertToSolidity xs) -- special case, MessageSender cannot be set like other variables
+convertToSolidity ((Set (BoolTrue)):xs) = (convertToSolidity xs) -- special case, BoolTrue cannot be set like other variables
+convertToSolidity ((Set (BoolFalse)):xs) = (convertToSolidity xs) -- special case, BoolFalse cannot be set like other variables
+convertToSolidity ((Set (IndexAddresses _ _)):xs) = (convertToSolidity xs) -- special case, IndexAddresses cannot be set like other variables
+convertToSolidity ((Set (Random _)):xs) = (convertToSolidity xs) -- special case, Random cannot be set like other variables
+convertToSolidity ((Set (IndexAddressList _ _)):xs) = (convertToSolidity xs) -- special case, BoolFalse cannot be set like other variables
+convertToSolidity ((Set (Increment _ _)):xs) = (convertToSolidity xs) -- special case, BoolFalse cannot be set like other variables
+convertToSolidity ((Set (Decrement _ _)):xs) = (convertToSolidity xs) -- special case, BoolFalse cannot be set like other variables
 convertToSolidity (x:xs) = (convertElementToSolidity x) : (convertToSolidity xs)
 
 convertElementToSolidity :: ContractElement -> ContractBodyElement
@@ -67,6 +76,7 @@ convertElementToSolidity (Set TotalShares) = setTotalShares
 convertElementToSolidity (Set (UnSignedAmount name)) = setUnSignedAmount name
 convertElementToSolidity (Set (SignedAmount name)) = setSignedAmount name
 convertElementToSolidity (Set (BooleanVariable name)) = setBooleanVariable name
+convertElementToSolidity (Set (AddressList name)) = setAddressList name
 
 contractAmount = uintVariableAssignmentDeclaration "amount" (DotIdentifier (ExpressionArgs (createIdentifierExpression "address") (CallArgumentExpr (createIdentifierExpression "this") [])) (createIdentifier "balance"))
 userAmount = uintVariableAssignmentDeclaration "amount" (Index (createIdentifierExpression "balance") (createIdentifierExpression "msg.sender"))
@@ -102,6 +112,7 @@ convertFunctionToSolidity name (Conditioned (RequireTime BetweenStartAndEnd) con
 convertFunctionToSolidity name (Conditioned (RequireRecipient recipient) contractElement) = ifRecipient (recipient) (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireTrue var) contractElement) = ifTrue (var) (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireFalse var) contractElement) = ifFalse (var) (convertFunctionToSolidity name contractElement)
+convertFunctionToSolidity name (Conditioned (RequireNotZero var) contractElement) = ifNotZero (var) (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireVariableRelation ValueGreaterThan var1 var2) contractElement) = ifValueGreaterThan (var1) (var2)  (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireVariableRelation ValueLessThan var1 var2) contractElement) = ifValueLessThan (var1) (var2)  (convertFunctionToSolidity name contractElement)
 convertFunctionToSolidity name (Conditioned (RequireVariableRelation ValueGreaterThanEqualTo var1 var2) contractElement) = ifValueGreaterThanEqualTo (var1) (var2)  (convertFunctionToSolidity name contractElement)
@@ -157,6 +168,9 @@ ifTrue var x = addRequirement x (expressionToStatement $ ExpressionArgs (createI
 
 ifFalse :: Variable -> ContractBodyElement -> ContractBodyElement
 ifFalse var x = addRequirement x (expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (Equality (createIdentifierExpression (getVariableName var)) (createIdentifierExpression "false")) []))
+
+ifNotZero :: Variable -> ContractBodyElement -> ContractBodyElement
+ifNotZero var x = addRequirement x (expressionToStatement $ ExpressionArgs (createIdentifierExpression "require") (CallArgumentExpr (InEquality (createIdentifierExpression (getVariableName var)) (createIdentifierExpression "0")) []))
 
 addGreatestCheck :: Block -> Block
 addGreatestCheck block = createBlock [(If (IfStatement (GreaterThan (createIdentifierExpression "msg.value") (createIdentifierExpression "contractBalance")) (BlockStatement $ block) (Nothing)))]
@@ -237,17 +251,24 @@ setSignedAmount name = StateVariableElem $ StateVariableDeclaration (ElementaryT
 setBooleanVariable :: String ->  ContractBodyElement
 setBooleanVariable name = StateVariableElem $ StateVariableDeclaration (ElementaryType $ Bool) [PublicState] (createIdentifier name) (Nothing)
 
+setAddressList :: String ->  ContractBodyElement
+setAddressList name = StateVariableElem $ StateVariableDeclaration (TypeNameExpression (ElementaryType $ addressPayable) (Nothing)) [PublicState] (createIdentifier name) (Nothing)
+
 loop :: Variable -> ContractBodyElement -> ContractBodyElement
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Just block))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (block))))
 loop x (FunctionElem (FunctionaDefinition name (params) modifiers (Nothing) (Nothing))) = (FunctionElem $ FunctionaDefinition name (params) modifiers (Nothing) (Just (addBlockToLoop (createLoop x) (createBlock []))))
 
 contractBalanceAssignment = expressionToStatement $ Equals (createIdentifierExpression "contractBalance") (createIdentifierExpression "0")
 ownerAssignment = expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")
+startAssignment = expressionToStatement $ Equals (createIdentifierExpression "start") (createIdentifierExpression "block.timestamp")
 endAssignment = expressionToStatement $ Equals (createIdentifierExpression "end") (createIdentifierExpression "start + hoursAfter * 1 hours")
+addressListAssignment name = expressionToStatement $ Equals (createIdentifierExpression name) (createIdentifierExpression ("new address payable[](" ++ name ++ "Size)"))
 
 buildConstructor :: [ContractBodyElement] -> ContractBodyElement
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType addressPayable) [PublicState] (Identifier 'o' ['w', 'n', 'e', 'r']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [ownerAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (TypeNameExpression (ElementaryType addressPayable) (Nothing)) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, ((y:ys) ++ "Size"))]) (Nothing) (createBlock [addressListAssignment (y:ys)]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'c' ['o', 'n', 't', 'r', 'a', 'c', 't', 'B', 'a', 'l', 'a', 'n', 'c', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [contractBalanceAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 's' ['t', 'a', 'r', 't']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [startAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'e' ['n', 'd']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "hoursAfter")]) (Nothing) (createBlock [endAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType varType) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(varType, (['_'] ++ y:ys))]) (Nothing) (createBlock [(expressionToStatement $ Equals (createIdentifierExpression (y:ys)) (createIdentifierExpression (['_'] ++[y] ++ ys)))]))) (buildConstructor xs)
 buildConstructor (_:xs) = buildConstructor xs
@@ -308,7 +329,7 @@ getVariableName StartTime = "start"
 getVariableName EndTime = "end"
 getVariableName (RecipientAddress (Recipient name)) = name
 getVariableName Balances = "balance"
-getVariableName (IndexAddress (var) (Recipient name))  = (getVariableName var) ++ "[" ++ name ++ "]"
+getVariableName (IndexAddresses (var) (Recipient name))  = (getVariableName var) ++ "[" ++ name ++ "]"
 getVariableName (Addresses name) = name
 getVariableName (UnSignedAmount name) = name
 getVariableName (SignedAmount name) = name
@@ -321,7 +342,13 @@ getVariableName TotalShares = "totalShares"
 getVariableName MessageValue = "msg.value"
 getVariableName BoolTrue = "true"
 getVariableName BoolFalse = "false"
-getVariableName (Random num) = "uint(uint256(keccak256(block.timestamp, block.difficulty))%" ++ (show num) ++ ")"
+getVariableName (Random num) = "uint(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%" ++ (getVariableName num) ++ ")"
+getVariableName (AddressList name) = name
+getVariableName (IndexAddressList var1 var2) = (getVariableName var1) ++ "[" ++ (getVariableName var2) ++ "]"
+getVariableName (MessageSender) = "msg.sender"
+getVariableName (Increment var int) = (getVariableName var) ++ " + " ++ (show int)
+getVariableName (Decrement var int) = (getVariableName var) ++ " + " ++ (show int)
+
 
 getType :: Variable -> TypeName
 getType Owner = ElementaryType uint
@@ -330,7 +357,7 @@ getType StartTime = ElementaryType uint
 getType EndTime = ElementaryType uint
 getType (RecipientAddress _) = ElementaryType addressPayable
 getType Balances = Mapping $ createMappingFromType address (ElementaryType uint)
-getType (IndexAddress _ _) = ElementaryType uint
+getType (IndexAddresses _ _) = ElementaryType uint
 getType (Addresses _) = Mapping $ createMappingFromType address (ElementaryType uint)
 getType (SignedAmount _) = ElementaryType int
 getType (UnSignedAmount _) = ElementaryType uint
@@ -343,3 +370,8 @@ getType TotalShares = ElementaryType uint
 getType BoolTrue = ElementaryType $ Bool
 getType BoolFalse = ElementaryType $ Bool
 getType (Random _) = ElementaryType $ uint
+getType (AddressList _) = TypeNameExpression (ElementaryType $ addressPayable) (Nothing)
+getType (IndexAddressList _ _) = ElementaryType $ addressPayable
+getType (MessageSender) = ElementaryType $ addressPayable
+getType (Increment var int) = (getType var)
+getType (Decrement var int) = (getType var)

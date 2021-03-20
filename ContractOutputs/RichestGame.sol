@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.7.4;
 contract RichestGame {
-	constructor (address payable _richest, uint _start, uint hoursAfter, uint _highestAmount) {
+	constructor (address payable _richest, uint hoursAfter, uint _highestAmount) {
 		richest = _richest; 
 		contractBalance = 0; 
-		start = _start; 
+		start = block.timestamp; 
 		end = start + hoursAfter * 1 hours; 
 		highestAmount = _highestAmount; 
 	}
