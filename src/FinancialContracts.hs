@@ -18,8 +18,8 @@ data Function = Financial FinancialFunctionality Amount Source
 
 data Recipient = Recipient String
 
-data Condition = RequireOwner | RequireTime TimeRequirement | RequireRecipient Recipient | RequireNotZero Variable
-               |  Variable | RequireTrue Variable | RequireFalse Variable | RequireVariableRelation VariableRelation Variable Variable
+data Condition = RequireOwner | RequireTime TimeRequirement | RequireRecipient Recipient | RequireNotZero Variable | RequireTrue Variable
+               | RequireFalse Variable | RequireVariableRelation VariableRelation Variable Variable
 
 data TimeRequirement = Started | NotStarted | Ended | NotEnded | BetweenStartAndEnd
 
@@ -207,7 +207,8 @@ addStatementToBlock :: Block -> Statement -> Block
 addStatementToBlock (Block xs) x = Block ((BlockStatementItem x):xs)
 
 setStartTime :: ContractBodyElement
-setStartTime = StateVariableElem $ StateVariableDeclaration (ElementaryType uint) [PublicState] (createIdentifier "start") (Nothing)
+setStartTime = StateVariableElem $ StateVariableDeclaration
+  (ElementaryType uint) [PublicState] (createIdentifier "start") (Nothing)
 
 setEndTime :: ContractBodyElement
 setEndTime = StateVariableElem $ StateVariableDeclaration (ElementaryType uint) [PublicState] (createIdentifier "end") (Nothing)
@@ -348,7 +349,6 @@ getVariableName (IndexAddressList var1 var2) = (getVariableName var1) ++ "[" ++ 
 getVariableName (MessageSender) = "msg.sender"
 getVariableName (Increment var int) = (getVariableName var) ++ " + " ++ (show int)
 getVariableName (Decrement var int) = (getVariableName var) ++ " + " ++ (show int)
-
 
 getType :: Variable -> TypeName
 getType Owner = ElementaryType uint

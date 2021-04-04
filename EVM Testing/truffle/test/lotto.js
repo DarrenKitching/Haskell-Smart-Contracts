@@ -33,8 +33,7 @@ contract("Lotto", function (accounts) {
         assert.equal(winner, julie, "Julie was not the winner.");
       }
       else {
-        //assert(0, "Neither Mary, Joe, Bill nor Julie was the winner.");
-        assert.equal(winner, mary, "no one was the winner")
+        assert.equal(winner, mary, "Neither Mary, Joe, Bill nor Julie was the winner. Something went wrong!")
       }
     });
   });

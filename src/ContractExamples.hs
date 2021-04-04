@@ -7,10 +7,13 @@ import Abstractions
 -- This module contains examples of contracts written in the Solidity Language Grammar
 
 -- Coin Example --
-coinExample = (Pragma (PragmaToken 's') [(PragmaToken 'o'), (PragmaToken 'l'), (PragmaToken 'i'),
- (PragmaToken 'd'), (PragmaToken 'i'), (PragmaToken 't'), (PragmaToken 'y'), (PragmaToken ' '),
- (PragmaToken '^'), (PragmaToken '0'), (PragmaToken '.'),
- (PragmaToken '7'), (PragmaToken '.'), (PragmaToken '4')] contractDef)
+coinExample = (Pragma (PragmaToken 's') [(PragmaToken 'o'),
+ (PragmaToken 'l'), (PragmaToken 'i'), (PragmaToken 'd'),
+ (PragmaToken 'i'), (PragmaToken 't'), (PragmaToken 'y'),
+ (PragmaToken ' '), (PragmaToken '^'), (PragmaToken '0'),
+ (PragmaToken '.'), (PragmaToken '7'), (PragmaToken '.'),
+ (PragmaToken '4')] contractDef)
+
 contractDef = (ContractDef (ContractDefinition (Nothing)
   (Identifier 'S' ['i', 'm', 'p', 'l', 'e', 'S', 't', 'o','r', 'a', 'g', 'e']) (Nothing) [storedData, setFunc, getFunc]) EOF)
 storedData = (StateVariableElem (StateVariableDeclaration

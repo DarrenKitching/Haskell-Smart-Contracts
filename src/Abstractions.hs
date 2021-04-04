@@ -126,7 +126,8 @@ bytesVariableAssignmentDeclaration :: String -> Expression -> VariableDeclaratio
 bytesVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ Bytes) (Nothing) (createIdentifier name)) (Just e)
 
 intVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
-intVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ SignedIntType Int) (Nothing) (createIdentifier name)) (Just e)
+intVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration
+  (ElementaryType $ SignedIntType Int) (Nothing) (createIdentifier name)) (Just e)
 
 uintVariableAssignmentDeclaration :: String -> Expression -> VariableDeclarationStatement
 uintVariableAssignmentDeclaration name e = SingleVariableDeclartion (VariableDeclaration (ElementaryType $ UnsignedIntType UInt) (Nothing) (createIdentifier name)) (Just e)
@@ -163,9 +164,14 @@ createVoidFunction :: String -> [FunctionModifiers] -> Maybe ParameterList -> Bl
 createVoidFunction name modifiers (Just parameters) block = FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters) modifiers (Nothing) (Just block)
 createVoidFunction name modifiers (Nothing) block = FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing) modifiers (Nothing) (Just block)
 
-createReturnFunction :: String -> [FunctionModifiers] -> Maybe ParameterList -> Block -> ParameterList -> FunctionDefinition
-createReturnFunction name modifiers (Just parameters) block returnParams = FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters) modifiers (Just returnParams) (Just block)
-createReturnFunction name modifiers (Nothing) block returnParams = FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing) modifiers (Just returnParams) (Just block)
+createReturnFunction :: String -> [FunctionModifiers] -> Maybe ParameterList
+  -> Block -> ParameterList -> FunctionDefinition
+createReturnFunction name modifiers (Just parameters) block returnParams =
+  FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters)
+  modifiers (Just returnParams) (Just block)
+createReturnFunction name modifiers (Nothing) block returnParams =
+  FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing)
+  modifiers (Just returnParams) (Just block)
 
 createEqualsExpression :: Identifier -> Identifier -> Expression
 createEqualsExpression identifier1 identifier2 = (Equals (IdentifierExpr $ identifier1) (IdentifierExpr $ identifier2))
@@ -208,7 +214,8 @@ joinConstructors (ConstructElem (Constructor (params1) (Nothing) (block1))) (Con
 joinBlocks :: Block -> Block -> Block
 joinBlocks (Block xs) (Block ys) = (Block (xs ++ ys))
 
-joinParamLists :: (Maybe ParameterList) -> (Maybe ParameterList) -> (Maybe ParameterList)
+joinParamLists :: (Maybe ParameterList) -> (Maybe ParameterList)
+  -> (Maybe ParameterList)
 joinParamLists (Nothing) (Nothing) = Nothing
 joinParamLists (Just x) (Nothing) = Just x
 joinParamLists (Nothing) (Just y) = Just y
