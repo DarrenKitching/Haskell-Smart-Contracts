@@ -21,29 +21,25 @@ stack exec HaskellContracts
 The sample DSL contracts are currently being outputted to the ContractOutputs folder as Solidity files.
 </p>
 <h2>Run Unit Tests</h2>
-<p>Unit tests have been written for the seven DSL example contracts implemented. To run these tests you first need to install Node.js and npm, details can be found here: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm. <br>This will allow you to install the Solidity compiler using:
+<p>Unit tests have been written for the seven DSL example contracts implemented. <br>To run these tests you first need to install Node.js and npm, details can be found here: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm. <br>This will allow you to install the Solidity compiler (version 0.7.4) using:
   
 ```sh
-npm install -g solc
+npm install -g solc@0.7.4
 ```
 You will then need to install testrpc using:
 
 ```sh
 npm install -g ethereumjs-testrpc
 ```
-Followed by installing truffle using:
+Followed by installing truffle (**version 5.1.67 exactly**, using other versions may cause tests to fail) using:
 ```sh
-npm install -g truffle
+npm install -g truffle@5.1.67
 ```
 To run the tests, you then need to open two seperate terminal windows and in one of those terminals run testrpc to simulate the actors in your blockchain using:
 ```sh
 testrpc
 ``` 
 in the second terminal you should then navigate to the "EVM Testing/truffle" folder and run:
-```sh
-sudo truffle migrate
-``` 
-followed by: 
 ```sh
 sudo truffle test
 ```
