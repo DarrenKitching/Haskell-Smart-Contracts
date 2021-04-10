@@ -161,16 +161,16 @@ createParameterList [(elementType, name)] = ParameterList (ElementaryType $ elem
 createParameterList ((elementType, name):xs) = ParameterList (ElementaryType $ elementType) Nothing (Just $ createIdentifier name) (Just $ createParameterList xs)
 
 createVoidFunction :: String -> [FunctionModifiers] -> Maybe ParameterList -> Block -> FunctionDefinition
-createVoidFunction name modifiers (Just parameters) block = FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters) modifiers (Nothing) (Just block)
-createVoidFunction name modifiers (Nothing) block = FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing) modifiers (Nothing) (Just block)
+createVoidFunction name modifiers (Just parameters) block = FunctionDefinition (IdentifierName $ createIdentifier name) (Just parameters) modifiers (Nothing) (Just block)
+createVoidFunction name modifiers (Nothing) block = FunctionDefinition (IdentifierName $ createIdentifier name) (Nothing) modifiers (Nothing) (Just block)
 
 createReturnFunction :: String -> [FunctionModifiers] -> Maybe ParameterList
   -> Block -> ParameterList -> FunctionDefinition
 createReturnFunction name modifiers (Just parameters) block returnParams =
-  FunctionaDefinition (IdentifierName $ createIdentifier name) (Just parameters)
+  FunctionDefinition (IdentifierName $ createIdentifier name) (Just parameters)
   modifiers (Just returnParams) (Just block)
 createReturnFunction name modifiers (Nothing) block returnParams =
-  FunctionaDefinition (IdentifierName $ createIdentifier name) (Nothing)
+  FunctionDefinition (IdentifierName $ createIdentifier name) (Nothing)
   modifiers (Just returnParams) (Just block)
 
 createEqualsExpression :: Identifier -> Identifier -> Expression

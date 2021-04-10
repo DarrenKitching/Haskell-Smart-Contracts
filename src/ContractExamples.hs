@@ -22,13 +22,13 @@ storedData = (StateVariableElem (StateVariableDeclaration
 setParam = ParameterList (ElementaryType $ UnsignedIntType UInt) (Nothing) (Just (Identifier 'x' [])) (Nothing)
 setBlock = Block [BlockStatementItem (ExprStatement (ExpressionStatement (Equals (IdentifierExpr
   (Identifier 's' ['t', 'o', 'r', 'e', 'd', 'D', 'a', 't','a'])) (IdentifierExpr (Identifier 'x' [])))))]
-setFunc = (FunctionElem (FunctionaDefinition (IdentifierName
+setFunc = (FunctionElem (FunctionDefinition (IdentifierName
   (Identifier 's' ['e', 't'])) (Just setParam) [(VisibilityModifier PublicVisibility)] (Nothing) (Just setBlock)))
 
 getParam = ParameterList (ElementaryType $ UnsignedIntType UInt) (Nothing) (Nothing) (Nothing)
 getBlock = Block [(BlockStatementItem (Return (ReturnStatement
   (Just (IdentifierExpr (Identifier 's' ['t', 'o', 'r', 'e', 'd', 'D', 'a', 't','a']))))))]
-getFunc = (FunctionElem (FunctionaDefinition (IdentifierName (Identifier 'g' ['e', 't']))
+getFunc = (FunctionElem (FunctionDefinition (IdentifierName (Identifier 'g' ['e', 't']))
   (Nothing) [(VisibilityModifier PublicVisibility), (StateMutabilityModifier View)] (Just (getParam)) (Just getBlock)))
 
 shorternedCoinExample = createPragma "solidity ^0.7.4" contractDef

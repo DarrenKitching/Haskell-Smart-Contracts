@@ -1,1 +1,0 @@
-sudo solc -o /mnt/c/users/kitch/Desktop --bin --ast-json --asm ContractOutputs/FullContract.sol --overwrite

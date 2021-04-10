@@ -216,8 +216,9 @@ data LibraryDefinition = LibraryDefinition Identifier [ContractBodyElement]
 data FunctionName = IdentifierName Identifier | Fallback | Receive
 data FunctionModifiers = VisibilityModifier Visibility | StateMutabilityModifier StateMutability | ModifierInvoc ModifierInvocation | Virtual | OverrideMod OverrideSpecifier
 
-data FunctionDefinition = FunctionaDefinition FunctionName (Maybe ParameterList)
-  [FunctionModifiers] (Maybe ParameterList) (Maybe Block)
+data FunctionDefinition = FunctionDefinition FunctionName
+  (Maybe ParameterList) [FunctionModifiers]
+  (Maybe ParameterList) (Maybe Block)
 
 data OverrideSpecifier = OverrideSpecifier (Maybe [IdentifierPath])
 

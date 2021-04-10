@@ -1,10 +1,5 @@
 const Lotto = artifacts.require("Lotto");
 
-/*
- * uncomment accounts to access the test accounts made available by the
- * Ethereum client
- * See docs: https://www.trufflesuite.com/docs/truffle/testing/writing-tests-in-javascript
- */
 contract("Lotto", function (accounts) {
   console.log("Accounts visible: ", accounts);
   const mary = accounts[0];
@@ -13,11 +8,11 @@ contract("Lotto", function (accounts) {
   const julie = accounts[3];
   it("Lotto run with four participants", function() {
     return Lotto.deployed().then(function(instance) {
-      instance.buyTicket(5, {from: mary, value: 5}); // mary buys a ticket
-      instance.buyTicket(5, {from: joe, value: 5}); // joe buys a ticket
-      instance.buyTicket(5, {from: bill, value: 5}); // bill buys a ticket
-      instance.buyTicket(5, {from: julie, value: 5}); // julie buys a ticket
-      instance.pickWinner(); // contract owner calls pick winner function
+      instance.buyTicket(5, {from: mary, value: 5});                                                                  // mary buys a ticket
+      instance.buyTicket(5, {from: joe, value: 5});                                                                   // joe buys a ticket
+      instance.buyTicket(5, {from: bill, value: 5});                                                                  // bill buys a ticket
+      instance.buyTicket(5, {from: julie, value: 5});                                                                  // julie buys a ticket
+      instance.pickWinner();                                                                                          // contract owner calls pick winner function
       return instance.checkWinner.call();
     }).then(function(winner) {
       if(winner == mary) {
@@ -33,7 +28,8 @@ contract("Lotto", function (accounts) {
         assert.equal(winner, julie, "Julie was not the winner.");
       }
       else {
-        assert.equal(winner, mary, "Neither Mary, Joe, Bill nor Julie was the winner. Something went wrong!")
+        assert.equal(winner, mary,
+          "Neither Mary, Joe, Bill nor Julie was the winner. Something went wrong!")
       }
     });
   });

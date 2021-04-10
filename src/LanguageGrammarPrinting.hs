@@ -10,8 +10,7 @@ duplicate string n = concat $ replicate n string
 
 printSolidity :: Solidity -> String
 printSolidity (EOF) = ""
-printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token)
-  ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
+printSolidity (Pragma token tokenList nextHighLevel) = "pragma " ++ (printPragmaToken token) ++ (printPragmaTokenList tokenList) ++ ";\n" ++ (printSolidity nextHighLevel)
 printSolidity (ImportDir directive nextHighLevel) = (printImportDirective directive) ++ (printSolidity nextHighLevel)
 printSolidity (ContractDef definition nextHighLevel) = (printContractDefinition definition) ++ (printSolidity nextHighLevel)
 printSolidity (InterfaceDef definition nextHighLevel) = (printInterfaceDefinition definition) ++ (printSolidity nextHighLevel)
@@ -73,14 +72,14 @@ printPath (DoubleQuotedPath litDouble) = "\"" ++ (LanguageGrammarPrinting.printS
 printPath (SingleQuotedPath litSingle) = "\'" ++ (LanguageGrammarPrinting.printStringLitSingle litSingle) ++ "\'"
 
 printFunctionDefinition :: FunctionDefinition -> Int -> String
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
-printFunctionDefinition (FunctionaDefinition funcName (Just x) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
-printFunctionDefinition (FunctionaDefinition funcName (Nothing) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionDefinition funcName (Nothing) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ ";"
+printFunctionDefinition (FunctionDefinition funcName (Just x) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionDefinition funcName (Just x) funcModifiers (Nothing) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "(" ++ (printParameterList x) ++ ") " ++ (printFunctionModifiers funcModifiers) ++ ";"
+printFunctionDefinition (FunctionDefinition funcName (Nothing) funcModifiers (Nothing) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionDefinition funcName (Nothing) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
+printFunctionDefinition (FunctionDefinition funcName (Just x) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
+printFunctionDefinition (FunctionDefinition funcName (Just x) funcModifiers (Just z) (Nothing)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "( " ++ (printParameterList x) ++ ")" ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ ";"
+printFunctionDefinition (FunctionDefinition funcName (Nothing) funcModifiers (Just z) (Just y)) tabCount = (duplicate "\t" tabCount) ++ "function " ++ (printFunctionName funcName) ++ "() " ++ (printFunctionModifiers funcModifiers) ++ "returns (" ++ (printParameterList z) ++ ")" ++ (printBlock y (tabCount + 1))
 
 printFunctionModifier :: FunctionModifiers -> String
 printFunctionModifier (VisibilityModifier visibility) = (printVisibility visibility) ++ " "
