@@ -262,7 +262,7 @@ loop x (FunctionElem (FunctionDefinition name (params) modifiers (Nothing) (Noth
 contractBalanceAssignment = expressionToStatement $ Equals (createIdentifierExpression "contractBalance") (createIdentifierExpression "0")
 ownerAssignment = expressionToStatement $ Equals (createIdentifierExpression "owner") (createIdentifierExpression "msg.sender")
 startAssignment = expressionToStatement $ Equals (createIdentifierExpression "start") (createIdentifierExpression "block.timestamp")
-endAssignment = expressionToStatement $ Equals (createIdentifierExpression "end") (createIdentifierExpression "start + hoursAfter * 1 hours")
+endAssignment = expressionToStatement $ Equals (createIdentifierExpression "end") (createIdentifierExpression "start + secondsAfter * 1 seconds")
 addressListAssignment name = expressionToStatement $ Equals (createIdentifierExpression name) (createIdentifierExpression ("new address payable[](" ++ name ++ "Size)"))
 
 buildConstructor :: [ContractBodyElement] -> ContractBodyElement
@@ -270,7 +270,7 @@ buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType a
 buildConstructor ((StateVariableElem (StateVariableDeclaration (TypeNameExpression (ElementaryType addressPayable) (Nothing)) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, ((y:ys) ++ "Size"))]) (Nothing) (createBlock [addressListAssignment (y:ys)]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'c' ['o', 'n', 't', 'r', 'a', 'c', 't', 'B', 'a', 'l', 'a', 'n', 'c', 'e']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [contractBalanceAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 's' ['t', 'a', 'r', 't']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Nothing) (Nothing) (createBlock [startAssignment]))) (buildConstructor xs)
-buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'e' ['n', 'd']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "hoursAfter")]) (Nothing) (createBlock [endAssignment]))) (buildConstructor xs)
+buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType uint) [PublicState] (Identifier 'e' ['n', 'd']) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(uint, "secondsAfter")]) (Nothing) (createBlock [endAssignment]))) (buildConstructor xs)
 buildConstructor ((StateVariableElem (StateVariableDeclaration (ElementaryType varType) [PublicState] (Identifier y ys) (Nothing))):xs) = joinConstructors (ConstructElem (Constructor (Just $ createParameterList [(varType, (['_'] ++ y:ys))]) (Nothing) (createBlock [(expressionToStatement $ Equals (createIdentifierExpression (y:ys)) (createIdentifierExpression (['_'] ++[y] ++ ys)))]))) (buildConstructor xs)
 buildConstructor (_:xs) = buildConstructor xs
 buildConstructor [] = ConstructElem (Constructor (Nothing) (Nothing) (createBlock []))

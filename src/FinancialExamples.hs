@@ -76,7 +76,7 @@ taxes = Contract "Taxes" [Set Owner, Set ContractBal, Set Balances,
 richest = Recipient "richest"
 highestAmount = UnSignedAmount "highestAmount"
 
-depositToContractBal =Conditioned (RequireTime BetweenStartAndEnd)
+depositToContractBal = Conditioned (RequireTime BetweenStartAndEnd)
   (Financial Deposit All ContractBalance)
 becomeRichest = Conditioned (RequireVariableRelation
   ValueGreaterThan MessageValue highestAmount) (Join
